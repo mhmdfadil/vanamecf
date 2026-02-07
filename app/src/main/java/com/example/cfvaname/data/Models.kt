@@ -34,3 +34,59 @@ data class UserSession(
     val fullName: String,
     val role: String
 )
+
+// ===================================================
+// GEJALA MODELS
+// ===================================================
+
+/**
+ * Model Gejala - mapping ke tabel gejalas di Supabase
+ */
+@Serializable
+data class Gejala(
+    val id: Long = 0,
+    val kode: String = "",
+    val nama: String = "",
+    @SerialName("hipotesis_id") val hipotesisId: Long = 0,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+/**
+ * Request body untuk insert/update gejala
+ */
+@Serializable
+data class GejalaRequest(
+    val kode: String,
+    val nama: String,
+    @SerialName("hipotesis_id") val hipotesisId: Long
+)
+
+// ===================================================
+// HIPOTESIS MODELS
+// ===================================================
+
+/**
+ * Model Hipotesis - mapping ke tabel hipotesiss di Supabase
+ */
+@Serializable
+data class Hipotesis(
+    val id: Long = 0,
+    val kode: String = "",
+    val nama: String = "",
+    val deskripsi: String? = null,
+    val rekomendasi: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+/**
+ * Request body untuk insert/update hipotesis
+ */
+@Serializable
+data class HipotesisRequest(
+    val kode: String,
+    val nama: String,
+    val deskripsi: String? = null,
+    val rekomendasi: String? = null
+)

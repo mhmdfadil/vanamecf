@@ -118,6 +118,32 @@ fun VenameApp() {
             }
         }
 
+        // === GEJALA (CRUD data gejala) ===
+        composable(Screen.Gejala.route) {
+            AppScaffold(
+                currentRoute = Screen.Gejala.route,
+                userSession = userSession,
+                onNavigate = handleNavigate,
+                onLogout = handleLogout,
+                title = "Data Gejala"
+            ) { padding ->
+                GejalaScreen(padding = padding)
+            }
+        }
+
+        // === HIPOTESIS (CRUD data hipotesis) ===
+        composable(Screen.Hipotesis.route) {
+            AppScaffold(
+                currentRoute = Screen.Hipotesis.route,
+                userSession = userSession,
+                onNavigate = handleNavigate,
+                onLogout = handleLogout,
+                title = "Data Hipotesis"
+            ) { padding ->
+                HipotesisScreen(padding = padding)
+            }
+        }
+
         // === PROFILE ===
         composable(Screen.Profile.route) {
             AppScaffold(
@@ -146,8 +172,6 @@ fun VenameApp() {
                 ReportsScreen(padding = padding)
             }
         }
-
-        
 
         // === SETTINGS ===
         composable(Screen.Settings.route) {

@@ -20,6 +20,16 @@ fun getSidebarMenuItems(): List<SidebarMenuItem> {
             route = Screen.Dashboard.route
         ),
         SidebarMenuItem(
+            title = "Data Hipotesis",
+            icon = Icons.Filled.Biotech,
+            route = Screen.Hipotesis.route
+        ),
+        SidebarMenuItem(
+            title = "Data Gejala",
+            icon = Icons.Filled.MedicalServices,
+            route = Screen.Gejala.route
+        ),
+        SidebarMenuItem(
             title = "Laporan",
             icon = Icons.Filled.Assessment,
             route = Screen.Reports.route
