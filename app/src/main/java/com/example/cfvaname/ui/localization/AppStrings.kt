@@ -75,6 +75,7 @@ sealed class AppStrings(val id: String, val en: String) {
     // DATA GEJALA (SYMPTOMS)
     // ===================================================
     object DataGejala : AppStrings("Data Gejala", "Symptoms Data")
+    object ManageSymptomData : AppStrings("Kelola data gejala penyakit", "Manage disease symptom data")
     object AddSymptom : AppStrings("Tambah Gejala", "Add Symptom")
     object EditSymptom : AppStrings("Edit Gejala", "Edit Symptom")
     object DeleteSymptom : AppStrings("Hapus Gejala", "Delete Symptom")
@@ -83,11 +84,17 @@ sealed class AppStrings(val id: String, val en: String) {
     object SymptomDescription : AppStrings("Deskripsi Gejala", "Symptom Description")
     object NoSymptoms : AppStrings("Belum ada data gejala", "No symptoms data")
     object SearchSymptom : AppStrings("Cari gejala...", "Search symptom...")
+    object NoSymptomFoundFor : AppStrings("Tidak ada gejala ditemukan untuk", "No symptoms found for")
+    object SymptomCodeExample : AppStrings("Contoh: G001", "Example: G001")
+    object SymptomNameExample : AppStrings("Contoh: Demam tinggi", "Example: High fever")
+    object DeletedDataCannotBeRestored : AppStrings("Data yang dihapus tidak dapat dikembalikan.", "Deleted data cannot be restored.")
+    object Deleting : AppStrings("Menghapus...", "Deleting...")
     
     // ===================================================
     // DATA HIPOTESIS (HYPOTHESIS)
     // ===================================================
     object DataHipotesis : AppStrings("Data Hipotesis", "Hypothesis Data")
+    object ManageHypothesisData : AppStrings("Kelola data hipotesis penyakit", "Manage disease hypothesis data")
     object AddHypothesis : AppStrings("Tambah Hipotesis", "Add Hypothesis")
     object EditHypothesis : AppStrings("Edit Hipotesis", "Edit Hypothesis")
     object DeleteHypothesis : AppStrings("Hapus Hipotesis", "Delete Hypothesis")
@@ -96,6 +103,16 @@ sealed class AppStrings(val id: String, val en: String) {
     object HypothesisDescription : AppStrings("Deskripsi Hipotesis", "Hypothesis Description")
     object NoHypothesis : AppStrings("Belum ada data hipotesis", "No hypothesis data")
     object SearchHypothesis : AppStrings("Cari hipotesis...", "Search hypothesis...")
+    object NoHypothesisFoundFor : AppStrings("Tidak ditemukan untuk", "Not found for")
+    object HypothesisCodeExample : AppStrings("Contoh: H001", "Example: H001")
+    object HypothesisNameExample : AppStrings("Contoh: COVID-19", "Example: COVID-19")
+    object HypothesisDescriptionPlaceholder : AppStrings("Penjelasan tentang hipotesis...", "Explanation about hypothesis...")
+    object Recommendation : AppStrings("Rekomendasi", "Recommendation")
+    object RecommendationOptional : AppStrings("Rekomendasi (opsional)", "Recommendation (optional)")
+    object RecommendationPlaceholder : AppStrings("Tindakan yang disarankan...", "Recommended action...")
+    object Optional : AppStrings("(opsional)", "(optional)")
+    object DetailHypothesis : AppStrings("Detail Hipotesis", "Hypothesis Detail")
+    object SymptomsReferencingWillBeAffected : AppStrings("Gejala yang merujuk hipotesis ini akan terdampak.", "Symptoms referencing this hypothesis will be affected.")
     
     // ===================================================
     // NILAI CF (CERTAINTY FACTOR)
@@ -108,6 +125,16 @@ sealed class AppStrings(val id: String, val en: String) {
     object SelectSymptom : AppStrings("Pilih Gejala", "Select Symptom")
     object SelectHypothesis : AppStrings("Pilih Hipotesis", "Select Hypothesis")
     object NoCfValues : AppStrings("Belum ada data nilai CF", "No CF values data")
+    object CertaintyFactor : AppStrings("Certainty Factor (0.00 - 1.00)", "Certainty Factor (0.00 - 1.00)")
+    object Level : AppStrings("Level", "Level")
+    object AutoDistributedValues : AppStrings("Nilai terdistribusi otomatis secara merata dari 0,00 sampai 1,00 sesuai jumlah data.", "Values are automatically distributed evenly from 0.00 to 1.00 based on the number of data.")
+    object ValueDistribution : AppStrings("Distribusi Nilai", "Value Distribution")
+    object LevelOfTotal : AppStrings("Level %d dari %d", "Level %d of %d")
+    object Description : AppStrings("Keterangan", "Description")
+    object DescriptionExample : AppStrings("Contoh: Cukup Yakin", "Example: Quite Certain")
+    object PreviewAfterAdd : AppStrings("Preview distribusi setelah ditambah:", "Preview distribution after adding:")
+    object AutoCannotChangeManually : AppStrings("(otomatis, tidak bisa diubah manual)", "(automatic, cannot be changed manually)")
+    object AllOtherCfValuesWillRecalculate : AppStrings("Semua nilai CF lainnya akan dihitung ulang otomatis.", "All other CF values will be recalculated automatically.")
     
     // ===================================================
     // PROFILE
@@ -146,7 +173,6 @@ sealed class AppStrings(val id: String, val en: String) {
     )
     object Technology : AppStrings("Teknologi", "Technology")
     object Copyright : AppStrings("© 2026 Sistem Cerdas Vename", "© 2026 Vename Smart System")
-    object Description : AppStrings("Deskripsi", "Description")
     object TermsAndConditions : AppStrings("Syarat dan Ketentuan", "Terms and Conditions")
     object PrivacyPolicy : AppStrings("Kebijakan Privasi", "Privacy Policy")
     

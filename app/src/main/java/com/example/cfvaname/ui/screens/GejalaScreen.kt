@@ -72,7 +72,7 @@ fun GejalaScreen(
                             Icon(Icons.Filled.SearchOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.5f), modifier = Modifier.size(64.dp))
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                if (uiState.searchQuery.isNotBlank()) "Tidak ada gejala ditemukan untuk\n\"${uiState.searchQuery}\""
+                                if (uiState.searchQuery.isNotBlank()) "${stringResource(AppStrings.NoSymptomFoundFor)}\n\"${uiState.searchQuery}\""
                                 else stringResource(AppStrings.NoSymptoms),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center
                             )
@@ -148,7 +148,7 @@ fun GejalaHeader(totalData: Int) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
                 Text(stringResource(AppStrings.DataGejala), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text("Kelola data gejala penyakit", color = MaterialTheme.colorScheme.onPrimary.copy(0.8f), fontSize = 13.sp)
+                Text(stringResource(AppStrings.ManageSymptomData), color = MaterialTheme.colorScheme.onPrimary.copy(0.8f), fontSize = 13.sp)
             }
             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.onPrimary.copy(0.2f)) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -231,7 +231,7 @@ fun GejalaFormDialog(
 
                 OutlinedTextField(
                     value = kode, onValueChange = onKodeChange,
-                    label = { Text(stringResource(AppStrings.SymptomCode)) }, placeholder = { Text("Contoh: G001") },
+                    label = { Text(stringResource(AppStrings.SymptomCode)) }, placeholder = { Text(stringResource(AppStrings.SymptomCodeExample)) },
                     leadingIcon = { Icon(Icons.Filled.Tag, null, tint = VenamePrimary) },
                     singleLine = true, shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VenamePrimary, cursorColor = VenamePrimary),
@@ -241,7 +241,7 @@ fun GejalaFormDialog(
 
                 OutlinedTextField(
                     value = nama, onValueChange = onNamaChange,
-                    label = { Text(stringResource(AppStrings.SymptomName)) }, placeholder = { Text("Contoh: Demam tinggi") },
+                    label = { Text(stringResource(AppStrings.SymptomName)) }, placeholder = { Text(stringResource(AppStrings.SymptomNameExample)) },
                     leadingIcon = { Icon(Icons.Filled.MedicalServices, null, tint = VenamePrimary) },
                     singleLine = true, shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VenamePrimary, cursorColor = VenamePrimary),
@@ -344,13 +344,13 @@ fun GejalaDeleteDialog(gejala: Gejala, isSaving: Boolean, onConfirm: () -> Unit,
                     }
                 }
                 Spacer(Modifier.height(4.dp))
-                Text("Data yang dihapus tidak dapat dikembalikan.", textAlign = TextAlign.Center, color = StatusError.copy(alpha = 0.7f), fontSize = 12.sp)
+                Text(stringResource(AppStrings.DeletedDataCannotBeRestored), textAlign = TextAlign.Center, color = StatusError.copy(alpha = 0.7f), fontSize = 12.sp)
             }
         },
         confirmButton = {
             Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = StatusError), shape = RoundedCornerShape(10.dp), enabled = !isSaving) {
                 if (isSaving) { CircularProgressIndicator(Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
-                Text(if (isSaving) "Menghapus..." else stringResource(AppStrings.Delete))
+                Text(if (isSaving) stringResource(AppStrings.Deleting) else stringResource(AppStrings.Delete))
             }
         },
         dismissButton = { OutlinedButton(onClick = { if (!isSaving) onDismiss() }, shape = RoundedCornerShape(10.dp)) { Text(stringResource(AppStrings.Cancel)) } }

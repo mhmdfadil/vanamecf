@@ -56,12 +56,12 @@ fun NilaiCfScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text(stringResource(AppStrings.NilaiCf), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                        Text("Certainty Factor (0.00 - 1.00)", color = MaterialTheme.colorScheme.onPrimary.copy(0.8f), fontSize = 13.sp)
+                        Text(stringResource(AppStrings.CertaintyFactor), color = MaterialTheme.colorScheme.onPrimary.copy(0.8f), fontSize = 13.sp)
                     }
                     Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.onPrimary.copy(0.2f)) {
                         Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("${uiState.nilaiCfList.size}", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                            Text("Level", color = MaterialTheme.colorScheme.onPrimary.copy(0.8f), fontSize = 11.sp)
+                            Text(stringResource(AppStrings.Level), color = MaterialTheme.colorScheme.onPrimary.copy(0.8f), fontSize = 11.sp)
                         }
                     }
                 }
@@ -78,7 +78,7 @@ fun NilaiCfScreen(
                     Icon(Icons.Filled.Info, null, tint = VenamePrimary, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "Nilai terdistribusi otomatis secara merata dari 0,00 sampai 1,00 sesuai jumlah data.",
+                        stringResource(AppStrings.AutoDistributedValues),
                         fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp
                     )
                 }
@@ -180,7 +180,7 @@ fun NilaiCfScreen(
 fun NilaiDistributionBar(nilaiList: List<NilaiCf>) {
     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
         Column(Modifier.padding(14.dp)) {
-            Text("Distribusi Nilai", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(AppStrings.ValueDistribution), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(10.dp))
 
             // Gradient bar
@@ -222,6 +222,8 @@ fun NilaiDistributionBar(nilaiList: List<NilaiCf>) {
 // ===================================================
 @Composable
 fun NilaiCfCard(nilaiCf: NilaiCf, index: Int, total: Int, onEdit: () -> Unit, onDelete: () -> Unit) {
+    val currentLanguage = LocalLanguage.current
+    
     // Color based on value
     val valueColor = when {
         nilaiCf.nilai <= 0.25 -> StatusError
@@ -254,7 +256,13 @@ fun NilaiCfCard(nilaiCf: NilaiCf, index: Int, total: Int, onEdit: () -> Unit, on
                     trackColor = valueColor.copy(alpha = 0.15f)
                 )
                 Spacer(Modifier.height(4.dp))
-                Text("Level $index dari $total", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    when (currentLanguage) {
+                        "en" -> "Level $index of $total"
+                        else -> "Level $index dari $total"
+                    },
+                    fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
@@ -288,8 +296,8 @@ fun NilaiCfFormDialog(
 
                 OutlinedTextField(
                     value = keterangan, onValueChange = onKeteranganChange,
-                    label = { Text("Keterangan") },
-                    placeholder = { Text("Contoh: Cukup Yakin") },
+                    label = { Text(stringResource(AppStrings.Description)) },
+                    placeholder = { Text(stringResource(AppStrings.DescriptionExample)) },
                     leadingIcon = { Icon(Icons.Filled.Label, null, tint = VenamePrimary) },
                     singleLine = true, shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VenamePrimary, cursorColor = VenamePrimary),
@@ -304,7 +312,7 @@ fun NilaiCfFormDialog(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.AutoGraph, null, tint = VenameAccent, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("Preview distribusi setelah ditambah:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(AppStrings.PreviewAfterAdd), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -365,7 +373,8 @@ fun NilaiCfEditDialog(
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(AppStrings.CfValue) + ": ", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(String.format("%.2f", nilaiCf.nilai), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VenamePrimary)
-                        Text(" (otomatis, tidak bisa diubah manual)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(AppStrings.AutoCannotChangeManually), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -373,7 +382,7 @@ fun NilaiCfEditDialog(
 
                 OutlinedTextField(
                     value = keterangan, onValueChange = onKeteranganChange,
-                    label = { Text("Keterangan") },
+                    label = { Text(stringResource(AppStrings.Description)) },
                     leadingIcon = { Icon(Icons.Filled.Label, null, tint = VenamePrimary) },
                     singleLine = true, shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VenamePrimary, cursorColor = VenamePrimary),
@@ -432,13 +441,13 @@ fun NilaiCfDeleteDialog(nilaiCf: NilaiCf, isSaving: Boolean, onConfirm: () -> Un
                     }
                 }
                 Spacer(Modifier.height(4.dp))
-                Text("Semua nilai CF lainnya akan dihitung ulang otomatis.", textAlign = TextAlign.Center, color = StatusWarning, fontSize = 12.sp)
+                Text(stringResource(AppStrings.AllOtherCfValuesWillRecalculate), textAlign = TextAlign.Center, color = StatusWarning, fontSize = 12.sp)
             }
         },
         confirmButton = {
             Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = StatusError), shape = RoundedCornerShape(10.dp), enabled = !isSaving) {
                 if (isSaving) { CircularProgressIndicator(Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
-                Text(if (isSaving) "Menghapus..." else stringResource(AppStrings.Delete))
+                Text(if (isSaving) stringResource(AppStrings.Deleting) else stringResource(AppStrings.Delete))
             }
         },
         dismissButton = { OutlinedButton(onClick = { if (!isSaving) onDismiss() }, shape = RoundedCornerShape(10.dp)) { Text(stringResource(AppStrings.Cancel)) } }
