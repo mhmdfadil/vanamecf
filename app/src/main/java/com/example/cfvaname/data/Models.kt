@@ -90,3 +90,29 @@ data class HipotesisRequest(
     val deskripsi: String? = null,
     val rekomendasi: String? = null
 )
+
+// ===================================================
+// NILAI CF MODELS
+// ===================================================
+
+/**
+ * Model Nilai CF - mapping ke tabel nilai_cfs di Supabase
+ * Nilai dibagi rata dari 0.00 sampai 1.00
+ */
+@Serializable
+data class NilaiCf(
+    val id: Long = 0,
+    val keterangan: String = "",
+    val nilai: Double = 0.0,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+/**
+ * Request body untuk insert/update nilai CF (hanya keterangan, nilai dihitung otomatis)
+ */
+@Serializable
+data class NilaiCfInsertRequest(
+    val keterangan: String,
+    val nilai: Double = 0.0
+)

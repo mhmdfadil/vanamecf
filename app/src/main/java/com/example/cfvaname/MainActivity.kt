@@ -144,6 +144,19 @@ fun VenameApp() {
             }
         }
 
+        // === NILAI CF (Certainty Factor) ===
+        composable(Screen.NilaiCf.route) {
+            AppScaffold(
+                currentRoute = Screen.NilaiCf.route,
+                userSession = userSession,
+                onNavigate = handleNavigate,
+                onLogout = handleLogout,
+                title = "Nilai CF"
+            ) { padding ->
+                NilaiCfScreen(padding = padding)
+            }
+        }
+
         // === PROFILE ===
         composable(Screen.Profile.route) {
             AppScaffold(

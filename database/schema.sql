@@ -210,3 +210,67 @@ END $$;
 UPDATE public.gejalas SET hipotesis_id = (SELECT id FROM public.hipotesiss WHERE kode = 'H001') WHERE kode IN ('G001');
 
 -- =====================================================
+
+-- =====================================================
+-- SISTEM CERDAS VENAME - Tabel Nilai CF (Certainty Factor)
+-- Jalankan SQL ini di Supabase SQL Editor
+-- =====================================================
+
+-- 1. Buat tabel nilai_cfs
+CREATE TABLE IF NOT EXISTS public.nilai_cfs (
+    id BIGSERIAL PRIMARY KEY,
+    keterangan TEXT NOT NULL,
+    nilai NUMERIC(3, 2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 2. Enable RLS
+ALTER TABLE public.nilai_cfs ENABLE ROW LEVEL SECURITY;
+
+-- 3. Policy
+CREATE POLICY "Allow full access to nilai_cfs" ON public.nilai_cfs
+    FOR ALL USING (TRUE) WITH CHECK (TRUE);
+
+-- 4. Trigger auto-update updated_at (reuse function)
+CREATE TRIGGER trigger_nilai_cfs_updated_at
+    BEFORE UPDATE ON public.nilai_cfs
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at();
+
+-- 5. Function: Recalculate semua nilai CF secara merata (0.00 - 1.00)
+--    Dipanggil setelah INSERT atau DELETE agar semua nilai otomatis terdistribusi rata
+CREATE OR REPLACE FUNCTION public.recalculate_nilai_cf()
+RETURNS VOID AS $$
+DECLARE
+    total_rows INT;
+    row_index INT := 0;
+    rec RECORD;
+    step_value NUMERIC(3,2);
+BEGIN
+    SELECT COUNT(*) INTO total_rows FROM public.nilai_cfs;
+
+    IF total_rows = 0 THEN
+        RETURN;
+    END IF;
+
+    IF total_rows = 1 THEN
+        UPDATE public.nilai_cfs SET nilai = 1.00;
+        RETURN;
+    END IF;
+
+    -- step = 1.00 / (total - 1)
+    step_value := ROUND(1.00 / (total_rows - 1), 2);
+
+    FOR rec IN SELECT id FROM public.nilai_cfs ORDER BY id ASC
+    LOOP
+        UPDATE public.nilai_cfs
+        SET nilai = LEAST(ROUND(row_index * step_value, 2), 1.00)
+        WHERE id = rec.id;
+        row_index := row_index + 1;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ====================================================================
+

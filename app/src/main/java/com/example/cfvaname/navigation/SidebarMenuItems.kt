@@ -30,6 +30,11 @@ fun getSidebarMenuItems(): List<SidebarMenuItem> {
             route = Screen.Gejala.route
         ),
         SidebarMenuItem(
+            title = "Nilai CF",
+            icon = Icons.Filled.BarChart,
+            route = Screen.NilaiCf.route
+        ),
+        SidebarMenuItem(
             title = "Laporan",
             icon = Icons.Filled.Assessment,
             route = Screen.Reports.route
