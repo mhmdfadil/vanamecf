@@ -170,6 +170,12 @@ sealed class AppStrings(val id: String, val en: String) {
     object ConfirmDeleteRule : AppStrings("Anda yakin ingin menghapus rule ini?", "Are you sure you want to delete this rule?")
     object Saving : AppStrings("Menyimpan...", "Saving...")
     object IdNotFound : AppStrings("tidak ditemukan", "not found")
+    object SelectCertaintyLevel : AppStrings("Pilih tingkat keyakinan untuk setiap gejala", "Select certainty level for each symptom")
+    object SaveAllRules : AppStrings("Simpan Semua Rules", "Save All Rules")
+    object NoHypothesisWithSymptoms : AppStrings("Belum ada hipotesis dengan gejala", "No hypothesis with symptoms yet")
+    object SymptomsCount : AppStrings("%d Gejala", "%d Symptoms")
+    object NotSet : AppStrings("Belum diatur", "Not set")
+    object RulesSavedSuccessfully : AppStrings("Rules berhasil disimpan", "Rules saved successfully")
     
     // ===================================================
     // REPORTS

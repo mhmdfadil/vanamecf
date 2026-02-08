@@ -8,29 +8,33 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+// Data untuk menyimpan state rule per gejala
+data class GejalaRuleState(
+    val gejala: Gejala,
+    val currentRule: Rule?,
+    val selectedCfId: Long // CF yang dipilih user
+)
+
+// Group hipotesis dengan gejala-gejalanya
+data class HipotesisGroup(
+    val hipotesis: Hipotesis,
+    val gejalaRules: List<GejalaRuleState>
+)
+
 data class RuleUiState(
-    val ruleList: List<Rule> = emptyList(),
-    val gejalaList: List<Gejala> = emptyList(),
+    val hipotesisGroups: List<HipotesisGroup> = emptyList(),
     val nilaiCfList: List<NilaiCf> = emptyList(),
     val isLoading: Boolean = false,
+    val isSaving: Boolean = false,
     val errorMessage: String? = null,
-    val successMessage: String? = null,
-    // Dialog
-    val showAddDialog: Boolean = false,
-    val showEditDialog: Boolean = false,
-    val showDeleteDialog: Boolean = false,
-    val selectedRule: Rule? = null,
-    // Form
-    val formGejalaId: Long = 0,
-    val formCfId: Long = 0,
-    val formError: String? = null,
-    val isSaving: Boolean = false
+    val successMessage: String? = null
 )
 
 class RuleViewModel : ViewModel() {
 
     private val ruleRepo = RuleRepository()
     private val gejalaRepo = GejalaRepository()
+    private val hipotesisRepo = HipotesisRepository()
     private val nilaiCfRepo = NilaiCfRepository()
 
     private val _uiState = MutableStateFlow(RuleUiState())
@@ -43,121 +47,114 @@ class RuleViewModel : ViewModel() {
     private fun loadAll() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            // Load all 3 in parallel-ish
+
+            val hipotesisResult = hipotesisRepo.getAll()
             val gejalaResult = gejalaRepo.getAll()
             val nilaiCfResult = nilaiCfRepo.getAll()
             val ruleResult = ruleRepo.getAll()
 
-            gejalaResult.onSuccess { _uiState.value = _uiState.value.copy(gejalaList = it) }
-            nilaiCfResult.onSuccess { _uiState.value = _uiState.value.copy(nilaiCfList = it) }
-            ruleResult.fold(
-                onSuccess = { _uiState.value = _uiState.value.copy(ruleList = it, isLoading = false) },
-                onFailure = { _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = it.message) }
-            )
+            if (hipotesisResult.isSuccess && gejalaResult.isSuccess &&
+                nilaiCfResult.isSuccess && ruleResult.isSuccess) {
+
+                val hipotesisList = hipotesisResult.getOrNull() ?: emptyList()
+                val gejalaList = gejalaResult.getOrNull() ?: emptyList()
+                val nilaiCfList = nilaiCfResult.getOrNull() ?: emptyList()
+                val ruleList = ruleResult.getOrNull() ?: emptyList()
+
+                val groups = hipotesisList.mapNotNull { hipotesis ->
+                    val gejalasForThisHipotesis = gejalaList.filter { it.hipotesisId == hipotesis.id }
+                    if (gejalasForThisHipotesis.isEmpty()) return@mapNotNull null
+
+                    val gejalaRules = gejalasForThisHipotesis.map { gejala ->
+                        val existingRule = ruleList.find { it.gejalaId == gejala.id }
+                        GejalaRuleState(
+                            gejala = gejala,
+                            currentRule = existingRule,
+                            selectedCfId = existingRule?.cfId ?: 0L
+                        )
+                    }
+
+                    HipotesisGroup(
+                        hipotesis = hipotesis,
+                        gejalaRules = gejalaRules
+                    )
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    hipotesisGroups = groups,
+                    nilaiCfList = nilaiCfList,
+                    isLoading = false
+                )
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Gagal memuat data"
+                )
+            }
         }
     }
 
-    fun loadRules() {
+    // 🔹 Perbaikan fungsi updateGejalaCfSelection
+    fun updateGejalaCfSelection(hipotesisId: Long, gejalaId: Long, cfId: Long) {
+        val currentGroups = _uiState.value.hipotesisGroups
+        val updatedGroups = currentGroups.map { group ->
+            if (group.hipotesis.id == hipotesisId) {
+                group.copy(
+                    gejalaRules = group.gejalaRules.map { gr ->
+                        if (gr.gejala.id == gejalaId) {
+                            gr.copy(selectedCfId = cfId)
+                        } else gr
+                    }
+                )
+            } else group
+        }
+        _uiState.value = _uiState.value.copy(hipotesisGroups = updatedGroups)
+    }
+
+    fun saveAllRules() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            ruleRepo.getAll().fold(
-                onSuccess = { _uiState.value = _uiState.value.copy(ruleList = it, isLoading = false) },
-                onFailure = { _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = it.message) }
-            )
+            _uiState.value = _uiState.value.copy(isSaving = true, errorMessage = null)
+
+            var hasError = false
+            val allGejalaRules = _uiState.value.hipotesisGroups.flatMap { it.gejalaRules }
+
+            for (gejalaRule in allGejalaRules) {
+                if (gejalaRule.selectedCfId == 0L) continue // Skip if not set
+
+                val request = RuleRequest(
+                    gejalaId = gejalaRule.gejala.id,
+                    cfId = gejalaRule.selectedCfId
+                )
+
+                val result = if (gejalaRule.currentRule != null) {
+                    ruleRepo.update(gejalaRule.currentRule.id, request)
+                } else {
+                    ruleRepo.insert(request)
+                }
+
+                if (result.isFailure) {
+                    hasError = true
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = result.exceptionOrNull()?.message
+                    )
+                    break
+                }
+            }
+
+            if (!hasError) {
+                _uiState.value = _uiState.value.copy(
+                    isSaving = false,
+                    successMessage = "Rules berhasil disimpan"
+                )
+                loadAll() // Reload to get updated data
+            } else {
+                _uiState.value = _uiState.value.copy(isSaving = false)
+            }
         }
     }
 
-    fun getGejala(id: Long): Gejala? = _uiState.value.gejalaList.find { it.id == id }
     fun getNilaiCf(id: Long): NilaiCf? = _uiState.value.nilaiCfList.find { it.id == id }
 
-    // Gejala yang belum punya rule (untuk add), kecuali yang sedang diedit
-    fun getAvailableGejala(excludeGejalaId: Long? = null): List<Gejala> {
-        val usedIds = _uiState.value.ruleList.map { it.gejalaId }.toSet()
-        return _uiState.value.gejalaList.filter { it.id !in usedIds || it.id == excludeGejalaId }
-    }
-
-    // === ADD ===
-    fun showAddDialog() {
-        // Refresh dropdown data
-        viewModelScope.launch {
-            gejalaRepo.getAll().onSuccess { _uiState.value = _uiState.value.copy(gejalaList = it) }
-            nilaiCfRepo.getAll().onSuccess { _uiState.value = _uiState.value.copy(nilaiCfList = it) }
-        }
-        _uiState.value = _uiState.value.copy(showAddDialog = true, formGejalaId = 0, formCfId = 0, formError = null)
-    }
-
-    fun hideAddDialog() { _uiState.value = _uiState.value.copy(showAddDialog = false, formError = null) }
-
-    fun saveNew() {
-        val s = _uiState.value
-        if (s.formGejalaId == 0L) { _uiState.value = s.copy(formError = "Pilih gejala terlebih dahulu"); return }
-        if (s.formCfId == 0L) { _uiState.value = s.copy(formError = "Pilih nilai CF terlebih dahulu"); return }
-
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true, formError = null)
-            ruleRepo.insert(RuleRequest(gejalaId = s.formGejalaId, cfId = s.formCfId)).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isSaving = false, showAddDialog = false, successMessage = "Rule berhasil ditambahkan")
-                    loadRules()
-                },
-                onFailure = { _uiState.value = _uiState.value.copy(isSaving = false, formError = it.message) }
-            )
-        }
-    }
-
-    // === EDIT ===
-    fun showEditDialog(rule: Rule) {
-        viewModelScope.launch {
-            gejalaRepo.getAll().onSuccess { _uiState.value = _uiState.value.copy(gejalaList = it) }
-            nilaiCfRepo.getAll().onSuccess { _uiState.value = _uiState.value.copy(nilaiCfList = it) }
-        }
-        _uiState.value = _uiState.value.copy(
-            showEditDialog = true, selectedRule = rule,
-            formGejalaId = rule.gejalaId, formCfId = rule.cfId, formError = null
-        )
-    }
-
-    fun hideEditDialog() { _uiState.value = _uiState.value.copy(showEditDialog = false, selectedRule = null, formError = null) }
-
-    fun saveEdit() {
-        val s = _uiState.value
-        val rule = s.selectedRule ?: return
-        if (s.formGejalaId == 0L) { _uiState.value = s.copy(formError = "Pilih gejala"); return }
-        if (s.formCfId == 0L) { _uiState.value = s.copy(formError = "Pilih nilai CF"); return }
-
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true, formError = null)
-            ruleRepo.update(rule.id, RuleRequest(gejalaId = s.formGejalaId, cfId = s.formCfId)).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isSaving = false, showEditDialog = false, selectedRule = null, successMessage = "Rule berhasil diupdate")
-                    loadRules()
-                },
-                onFailure = { _uiState.value = _uiState.value.copy(isSaving = false, formError = it.message) }
-            )
-        }
-    }
-
-    // === DELETE ===
-    fun showDeleteDialog(rule: Rule) { _uiState.value = _uiState.value.copy(showDeleteDialog = true, selectedRule = rule) }
-    fun hideDeleteDialog() { _uiState.value = _uiState.value.copy(showDeleteDialog = false, selectedRule = null) }
-
-    fun confirmDelete() {
-        val rule = _uiState.value.selectedRule ?: return
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true)
-            ruleRepo.delete(rule.id).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isSaving = false, showDeleteDialog = false, selectedRule = null, successMessage = "Rule berhasil dihapus")
-                    loadRules()
-                },
-                onFailure = { _uiState.value = _uiState.value.copy(isSaving = false, showDeleteDialog = false, errorMessage = it.message) }
-            )
-        }
-    }
-
-    // === FORM ===
-    fun onFormGejalaIdChange(v: Long) { _uiState.value = _uiState.value.copy(formGejalaId = v, formError = null) }
-    fun onFormCfIdChange(v: Long) { _uiState.value = _uiState.value.copy(formCfId = v, formError = null) }
     fun clearSuccessMessage() { _uiState.value = _uiState.value.copy(successMessage = null) }
     fun clearErrorMessage() { _uiState.value = _uiState.value.copy(errorMessage = null) }
 }
