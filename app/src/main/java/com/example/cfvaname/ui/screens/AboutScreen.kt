@@ -59,12 +59,12 @@ fun AboutScreen(padding: PaddingValues) {
             text = stringResource(AppStrings.AppName),
             fontWeight = FontWeight.Bold,
             fontSize = 22.sp,
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
         Text(
             text = stringResource(AppStrings.AppVersion) + " 1.0.0",
             fontSize = 14.sp,
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -83,13 +83,13 @@ fun AboutScreen(padding: PaddingValues) {
                     text = stringResource(AppStrings.AboutApp),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(AppStrings.AppDescription),
                     fontSize = 14.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 22.sp
                 )
             }
@@ -111,7 +111,7 @@ fun AboutScreen(padding: PaddingValues) {
                     text = stringResource(AppStrings.Technology),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 val techs = listOf(
@@ -132,7 +132,7 @@ fun AboutScreen(padding: PaddingValues) {
                                 .background(VenamePrimary)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text(text = tech, fontSize = 14.sp, color = TextSecondary)
+                        Text(text = tech, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -154,13 +154,13 @@ fun AboutScreen(padding: PaddingValues) {
                     text = stringResource(AppStrings.Developer),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(AppStrings.DeveloperTeam),
                     fontSize = 14.sp,
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -170,7 +170,7 @@ fun AboutScreen(padding: PaddingValues) {
         Text(
             text = stringResource(AppStrings.Copyright),
             fontSize = 12.sp,
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(16.dp))

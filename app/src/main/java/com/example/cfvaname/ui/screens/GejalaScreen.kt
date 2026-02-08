@@ -62,19 +62,19 @@ fun GejalaScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator(color = VenamePrimary)
                             Spacer(Modifier.height(12.dp))
-                            Text(stringResource(AppStrings.Loading), color = TextSecondary, fontSize = 14.sp)
+                            Text(stringResource(AppStrings.Loading), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                         }
                     }
                 }
                 uiState.gejalaList.isEmpty() -> {
                     Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Filled.SearchOff, null, tint = TextSecondary.copy(0.5f), modifier = Modifier.size(64.dp))
+                            Icon(Icons.Filled.SearchOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.5f), modifier = Modifier.size(64.dp))
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 if (uiState.searchQuery.isNotBlank()) "Tidak ada gejala ditemukan untuk\n\"${uiState.searchQuery}\""
                                 else stringResource(AppStrings.NoSymptoms),
-                                color = TextSecondary, fontSize = 14.sp, textAlign = TextAlign.Center
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -147,13 +147,13 @@ fun GejalaHeader(totalData: Int) {
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
-                Text(stringResource(AppStrings.DataGejala), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text("Kelola data gejala penyakit", color = Color.White.copy(0.8f), fontSize = 13.sp)
+                Text(stringResource(AppStrings.DataGejala), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text("Kelola data gejala penyakit", color = MaterialTheme.colorScheme.onPrimary.copy(0.8f), fontSize = 13.sp)
             }
-            Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(0.2f)) {
+            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.onPrimary.copy(0.2f)) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("$totalData", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                    Text(stringResource(AppStrings.TotalSymptoms), color = Color.White.copy(0.8f), fontSize = 11.sp)
+                    Text("$totalData", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                    Text(stringResource(AppStrings.TotalSymptoms), color = MaterialTheme.colorScheme.onPrimary.copy(0.8f), fontSize = 11.sp)
                 }
             }
         }
@@ -189,7 +189,7 @@ fun GejalaCard(gejala: Gejala, hipotesisNama: String, hipotesisKode: String, onE
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(gejala.nama, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = TextPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(gejala.nama, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(6.dp))
                 Surface(shape = RoundedCornerShape(6.dp), color = VenameSecondary.copy(alpha = 0.1f)) {
                     Row(Modifier.padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -224,8 +224,8 @@ fun GejalaFormDialog(
         Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp, modifier = Modifier.fillMaxWidth(0.9f)) {
             Column(Modifier.padding(24.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
-                    IconButton(onClick = { if (!isSaving) onDismiss() }, modifier = Modifier.size(32.dp)) { Icon(Icons.Filled.Close, stringResource(AppStrings.Close), tint = TextSecondary) }
+                    Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                    IconButton(onClick = { if (!isSaving) onDismiss() }, modifier = Modifier.size(32.dp)) { Icon(Icons.Filled.Close, stringResource(AppStrings.Close), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
                 Spacer(Modifier.height(16.dp))
 
@@ -250,7 +250,7 @@ fun GejalaFormDialog(
                 Spacer(Modifier.height(12.dp))
 
                 // Hipotesis Dropdown
-                Text(stringResource(AppStrings.SelectHypothesis), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextSecondary)
+                Text(stringResource(AppStrings.SelectHypothesis), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(4.dp))
 
                 ExposedDropdownMenuBox(expanded = dropdownExpanded, onExpandedChange = { if (!isSaving) dropdownExpanded = it }) {
@@ -266,7 +266,7 @@ fun GejalaFormDialog(
                     ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
                         if (hipotesisList.isEmpty()) {
                             DropdownMenuItem(
-                                text = { Text(stringResource(AppStrings.NoHypothesis), color = TextSecondary, fontSize = 14.sp) },
+                                text = { Text(stringResource(AppStrings.NoHypothesis), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
                                 onClick = { dropdownExpanded = false }
                             )
                         } else {
@@ -279,7 +279,7 @@ fun GejalaFormDialog(
                                                 Text(hipotesis.kode, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSelected) VenamePrimary else VenameSecondary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                             }
                                             Spacer(Modifier.width(10.dp))
-                                            Text(hipotesis.nama, fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal, color = if (isSelected) VenamePrimary else TextPrimary)
+                                            Text(hipotesis.nama, fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal, color = if (isSelected) VenamePrimary else MaterialTheme.colorScheme.onSurface)
                                         }
                                     },
                                     onClick = {
@@ -329,10 +329,10 @@ fun GejalaDeleteDialog(gejala: Gejala, isSaving: Boolean, onConfirm: () -> Unit,
                 Icon(Icons.Filled.DeleteForever, null, tint = StatusError, modifier = Modifier.size(30.dp))
             }
         },
-        title = { Text(stringResource(AppStrings.DeleteSymptom), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+        title = { Text(stringResource(AppStrings.DeleteSymptom), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(stringResource(AppStrings.DeleteConfirmation), textAlign = TextAlign.Center, color = TextSecondary, fontSize = 14.sp)
+                Text(stringResource(AppStrings.DeleteConfirmation), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 Spacer(Modifier.height(12.dp))
                 Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -340,7 +340,7 @@ fun GejalaDeleteDialog(gejala: Gejala, isSaving: Boolean, onConfirm: () -> Unit,
                             Text(gejala.kode, color = VenamePrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                         }
                         Spacer(Modifier.width(10.dp))
-                        Text(gejala.nama, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = TextPrimary)
+                        Text(gejala.nama, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
                 Spacer(Modifier.height(4.dp))

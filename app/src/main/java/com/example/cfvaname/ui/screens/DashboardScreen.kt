@@ -56,14 +56,14 @@ fun DashboardScreen(
                 Column {
                     Text(
                         text = stringResource(AppStrings.WelcomeBack) + ", ${userSession?.fullName ?: "User"} 👋",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = stringResource(AppStrings.AppName),
-                        color = Color.White.copy(alpha = 0.85f),
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                         fontSize = 14.sp
                     )
                 }
@@ -77,7 +77,7 @@ fun DashboardScreen(
             text = stringResource(AppStrings.Statistics),
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -132,7 +132,7 @@ fun DashboardScreen(
             text = stringResource(AppStrings.RecentActivities),
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -189,13 +189,13 @@ fun DashboardStatCard(
                 text = value,
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
-                color = TextPrimary
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -239,12 +239,12 @@ fun ActivityItem(
                     text = title,
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp,
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = time,
                     fontSize = 12.sp,
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
