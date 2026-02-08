@@ -31,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cfvaname.data.Gejala
 import com.example.cfvaname.data.Hipotesis
 import com.example.cfvaname.ui.theme.*
+import com.example.cfvaname.ui.localization.*
 import com.example.cfvaname.viewmodel.GejalaViewModel
 
 @Composable
@@ -61,7 +62,7 @@ fun GejalaScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator(color = VenamePrimary)
                             Spacer(Modifier.height(12.dp))
-                            Text("Memuat data gejala...", color = TextSecondary, fontSize = 14.sp)
+                            Text(stringResource(AppStrings.Loading), color = TextSecondary, fontSize = 14.sp)
                         }
                     }
                 }
@@ -72,7 +73,7 @@ fun GejalaScreen(
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 if (uiState.searchQuery.isNotBlank()) "Tidak ada gejala ditemukan untuk\n\"${uiState.searchQuery}\""
-                                else "Belum ada data gejala",
+                                else stringResource(AppStrings.NoSymptoms),
                                 color = TextSecondary, fontSize = 14.sp, textAlign = TextAlign.Center
                             )
                         }
@@ -98,15 +99,15 @@ fun GejalaScreen(
         FloatingActionButton(
             onClick = { gejalaViewModel.showAddDialog() },
             containerColor = VenamePrimary, contentColor = Color.White, shape = CircleShape,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 16.dp, end = 4.dp)
-        ) { Icon(Icons.Filled.Add, "Tambah Gejala") }
+            modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 16.dp, end = 16.dp)
+        ) { Icon(Icons.Filled.Add, stringResource(AppStrings.AddSymptom)) }
 
         SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
     }
 
     if (uiState.showAddDialog) {
         GejalaFormDialog(
-            title = "Tambah Gejala Baru", kode = uiState.formKode, nama = uiState.formNama,
+            title = stringResource(AppStrings.AddSymptom), kode = uiState.formKode, nama = uiState.formNama,
             selectedHipotesisId = uiState.formHipotesisId, hipotesisList = uiState.hipotesisList,
             errorMessage = uiState.formError, isSaving = uiState.isSaving,
             onKodeChange = { gejalaViewModel.onFormKodeChange(it) },
@@ -118,7 +119,7 @@ fun GejalaScreen(
     }
     if (uiState.showEditDialog) {
         GejalaFormDialog(
-            title = "Edit Gejala", kode = uiState.formKode, nama = uiState.formNama,
+            title = stringResource(AppStrings.EditSymptom), kode = uiState.formKode, nama = uiState.formNama,
             selectedHipotesisId = uiState.formHipotesisId, hipotesisList = uiState.hipotesisList,
             errorMessage = uiState.formError, isSaving = uiState.isSaving,
             onKodeChange = { gejalaViewModel.onFormKodeChange(it) },
@@ -146,13 +147,13 @@ fun GejalaHeader(totalData: Int) {
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
-                Text("Data Gejala", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(stringResource(AppStrings.DataGejala), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 Text("Kelola data gejala penyakit", color = Color.White.copy(0.8f), fontSize = 13.sp)
             }
             Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(0.2f)) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("$totalData", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                    Text("Total", color = Color.White.copy(0.8f), fontSize = 11.sp)
+                    Text(stringResource(AppStrings.TotalSymptoms), color = Color.White.copy(0.8f), fontSize = 11.sp)
                 }
             }
         }
@@ -164,11 +165,11 @@ fun GejalaSearchBar(query: String, onQueryChange: (String) -> Unit) {
     val focusManager = LocalFocusManager.current
     OutlinedTextField(
         value = query, onValueChange = onQueryChange,
-        placeholder = { Text("Cari kode atau nama gejala...", fontSize = 14.sp) },
+        placeholder = { Text(stringResource(AppStrings.SearchSymptom), fontSize = 14.sp) },
         leadingIcon = { Icon(Icons.Filled.Search, null, tint = VenamePrimary, modifier = Modifier.size(20.dp)) },
         trailingIcon = {
             if (query.isNotBlank()) {
-                IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Filled.Clear, "Hapus", tint = TextSecondary, modifier = Modifier.size(20.dp)) }
+                IconButton(onClick = { onQueryChange("") }) { Icon(Icons.Filled.Clear, stringResource(AppStrings.Delete), tint = TextSecondary, modifier = Modifier.size(20.dp)) }
             }
         },
         singleLine = true, shape = RoundedCornerShape(12.dp),
@@ -181,7 +182,7 @@ fun GejalaSearchBar(query: String, onQueryChange: (String) -> Unit) {
 
 @Composable
 fun GejalaCard(gejala: Gejala, hipotesisNama: String, hipotesisKode: String, onEdit: () -> Unit, onDelete: () -> Unit) {
-    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
+    Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(VenamePrimary.copy(0.1f)), contentAlignment = Alignment.Center) {
                 Text(gejala.kode, color = VenamePrimary, fontWeight = FontWeight.Bold, fontSize = 11.sp, textAlign = TextAlign.Center)
@@ -199,8 +200,8 @@ fun GejalaCard(gejala: Gejala, hipotesisNama: String, hipotesisKode: String, onE
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) { Icon(Icons.Filled.Edit, "Edit", tint = VenamePrimary, modifier = Modifier.size(18.dp)) }
-                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) { Icon(Icons.Filled.Delete, "Hapus", tint = StatusError, modifier = Modifier.size(18.dp)) }
+                IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) { Icon(Icons.Filled.Edit, stringResource(AppStrings.Edit), tint = VenamePrimary, modifier = Modifier.size(18.dp)) }
+                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) { Icon(Icons.Filled.Delete, stringResource(AppStrings.Delete), tint = StatusError, modifier = Modifier.size(18.dp)) }
             }
         }
     }
@@ -220,17 +221,17 @@ fun GejalaFormDialog(
     val displayText = if (selectedHipotesis != null) "${selectedHipotesis.kode} - ${selectedHipotesis.nama}" else ""
 
     Dialog(onDismissRequest = { if (!isSaving) onDismiss() }) {
-        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp, modifier = Modifier.fillMaxWidth()) {
+        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp, modifier = Modifier.fillMaxWidth(0.9f)) {
             Column(Modifier.padding(24.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
-                    IconButton(onClick = { if (!isSaving) onDismiss() }, modifier = Modifier.size(32.dp)) { Icon(Icons.Filled.Close, "Tutup", tint = TextSecondary) }
+                    IconButton(onClick = { if (!isSaving) onDismiss() }, modifier = Modifier.size(32.dp)) { Icon(Icons.Filled.Close, stringResource(AppStrings.Close), tint = TextSecondary) }
                 }
                 Spacer(Modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = kode, onValueChange = onKodeChange,
-                    label = { Text("Kode Gejala") }, placeholder = { Text("Contoh: G001") },
+                    label = { Text(stringResource(AppStrings.SymptomCode)) }, placeholder = { Text("Contoh: G001") },
                     leadingIcon = { Icon(Icons.Filled.Tag, null, tint = VenamePrimary) },
                     singleLine = true, shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VenamePrimary, cursorColor = VenamePrimary),
@@ -240,7 +241,7 @@ fun GejalaFormDialog(
 
                 OutlinedTextField(
                     value = nama, onValueChange = onNamaChange,
-                    label = { Text("Nama Gejala") }, placeholder = { Text("Contoh: Demam tinggi") },
+                    label = { Text(stringResource(AppStrings.SymptomName)) }, placeholder = { Text("Contoh: Demam tinggi") },
                     leadingIcon = { Icon(Icons.Filled.MedicalServices, null, tint = VenamePrimary) },
                     singleLine = true, shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VenamePrimary, cursorColor = VenamePrimary),
@@ -249,13 +250,13 @@ fun GejalaFormDialog(
                 Spacer(Modifier.height(12.dp))
 
                 // Hipotesis Dropdown
-                Text("Hipotesis", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextSecondary)
+                Text(stringResource(AppStrings.SelectHypothesis), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextSecondary)
                 Spacer(Modifier.height(4.dp))
 
                 ExposedDropdownMenuBox(expanded = dropdownExpanded, onExpandedChange = { if (!isSaving) dropdownExpanded = it }) {
                     OutlinedTextField(
                         value = displayText, onValueChange = {}, readOnly = true,
-                        placeholder = { Text("Pilih hipotesis...") },
+                        placeholder = { Text(stringResource(AppStrings.SelectHypothesis)) },
                         leadingIcon = { Icon(Icons.Filled.Biotech, null, tint = VenamePrimary) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
                         singleLine = true, shape = RoundedCornerShape(12.dp),
@@ -265,7 +266,7 @@ fun GejalaFormDialog(
                     ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
                         if (hipotesisList.isEmpty()) {
                             DropdownMenuItem(
-                                text = { Text("Tidak ada data hipotesis", color = TextSecondary, fontSize = 14.sp) },
+                                text = { Text(stringResource(AppStrings.NoHypothesis), color = TextSecondary, fontSize = 14.sp) },
                                 onClick = { dropdownExpanded = false }
                             )
                         } else {
@@ -307,10 +308,10 @@ fun GejalaFormDialog(
                 Spacer(Modifier.height(20.dp))
 
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(onClick = { if (!isSaving) onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)) { Text("Batal") }
+                    OutlinedButton(onClick = { if (!isSaving) onDismiss() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)) { Text(stringResource(AppStrings.Cancel)) }
                     Button(onClick = onSave, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = VenamePrimary), enabled = !isSaving) {
                         if (isSaving) { CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
-                        Text(if (isSaving) "Menyimpan..." else "Simpan")
+                        Text(if (isSaving) stringResource(AppStrings.Loading) else stringResource(AppStrings.Save))
                     }
                 }
             }
@@ -328,10 +329,10 @@ fun GejalaDeleteDialog(gejala: Gejala, isSaving: Boolean, onConfirm: () -> Unit,
                 Icon(Icons.Filled.DeleteForever, null, tint = StatusError, modifier = Modifier.size(30.dp))
             }
         },
-        title = { Text("Hapus Gejala?", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+        title = { Text(stringResource(AppStrings.DeleteSymptom), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Anda yakin ingin menghapus gejala ini?", textAlign = TextAlign.Center, color = TextSecondary, fontSize = 14.sp)
+                Text(stringResource(AppStrings.DeleteConfirmation), textAlign = TextAlign.Center, color = TextSecondary, fontSize = 14.sp)
                 Spacer(Modifier.height(12.dp))
                 Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -349,9 +350,9 @@ fun GejalaDeleteDialog(gejala: Gejala, isSaving: Boolean, onConfirm: () -> Unit,
         confirmButton = {
             Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = StatusError), shape = RoundedCornerShape(10.dp), enabled = !isSaving) {
                 if (isSaving) { CircularProgressIndicator(Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
-                Text(if (isSaving) "Menghapus..." else "Hapus")
+                Text(if (isSaving) "Menghapus..." else stringResource(AppStrings.Delete))
             }
         },
-        dismissButton = { OutlinedButton(onClick = { if (!isSaving) onDismiss() }, shape = RoundedCornerShape(10.dp)) { Text("Batal") } }
+        dismissButton = { OutlinedButton(onClick = { if (!isSaving) onDismiss() }, shape = RoundedCornerShape(10.dp)) { Text(stringResource(AppStrings.Cancel)) } }
     )
 }

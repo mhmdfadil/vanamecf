@@ -62,6 +62,15 @@ sealed class AppStrings(val id: String, val en: String) {
     object TotalHypothesis : AppStrings("Total Hipotesis", "Total Hypothesis")
     object TotalDiagnosis : AppStrings("Total Diagnosis", "Total Diagnosis")
     
+    // Dashboard activities
+    object NewUserRegistered : AppStrings("User baru terdaftar", "New user registered")
+    object DataUploadSuccess : AppStrings("Data berhasil di-upload", "Data uploaded successfully")
+    object SystemUpdated : AppStrings("Sistem telah diperbarui", "System has been updated")
+    object MonthlyReportCreated : AppStrings("Laporan bulanan dibuat", "Monthly report created")
+    object BackupCompleted : AppStrings("Backup otomatis selesai", "Automatic backup completed")
+    object MinutesAgo : AppStrings("menit lalu", "minutes ago")
+    object HourAgo : AppStrings("jam lalu", "hours ago")
+    
     // ===================================================
     // DATA GEJALA (SYMPTOMS)
     // ===================================================
@@ -126,9 +135,17 @@ sealed class AppStrings(val id: String, val en: String) {
     // ===================================================
     // ABOUT
     // ===================================================
+    object AppName : AppStrings("Sistem Cerdas Vename", "Vename Smart System")
     object AboutApp : AppStrings("Tentang Aplikasi", "About Application")
     object AppVersion : AppStrings("Versi Aplikasi", "Application Version")
     object Developer : AppStrings("Pengembang", "Developer")
+    object DeveloperTeam : AppStrings("Development Team 2026", "Development Team 2026")
+    object AppDescription : AppStrings(
+        "Sistem Cerdas Vename adalah platform pengelolaan data dan monitoring yang dirancang untuk membantu organisasi dalam mengoptimalkan proses bisnis secara real-time dengan teknologi terkini.",
+        "Vename Smart System is a data management and monitoring platform designed to help organizations optimize business processes in real-time with the latest technology."
+    )
+    object Technology : AppStrings("Teknologi", "Technology")
+    object Copyright : AppStrings("© 2026 Sistem Cerdas Vename", "© 2026 Vename Smart System")
     object Description : AppStrings("Deskripsi", "Description")
     object TermsAndConditions : AppStrings("Syarat dan Ketentuan", "Terms and Conditions")
     object PrivacyPolicy : AppStrings("Kebijakan Privasi", "Privacy Policy")

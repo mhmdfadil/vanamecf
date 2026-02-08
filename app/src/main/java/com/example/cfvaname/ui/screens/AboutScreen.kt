@@ -18,8 +18,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.cfvaname.data.UserSession
 import com.example.cfvaname.ui.theme.*
+import com.example.cfvaname.ui.localization.*
 
 // ===================================================
 // ABOUT SCREEN
@@ -56,37 +56,38 @@ fun AboutScreen(padding: PaddingValues) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Sistem Cerdas Vename",
+            text = stringResource(AppStrings.AppName),
             fontWeight = FontWeight.Bold,
             fontSize = 22.sp,
             color = TextPrimary
         )
         Text(
-            text = "Versi 1.0.0",
+            text = stringResource(AppStrings.AppVersion) + " 1.0.0",
             fontSize = 14.sp,
             color = TextSecondary
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // About Application Section
         Surface(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surface,
             shadowElevation = 2.dp
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "Tentang Aplikasi",
+                    text = stringResource(AppStrings.AboutApp),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
                     color = TextPrimary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Sistem Cerdas Vename adalah platform pengelolaan data dan monitoring " +
-                            "yang dirancang untuk membantu organisasi dalam mengoptimalkan " +
-                            "proses bisnis secara real-time dengan teknologi terkini.",
+                    text = stringResource(AppStrings.AppDescription),
                     fontSize = 14.sp,
                     color = TextSecondary,
                     lineHeight = 22.sp
@@ -96,15 +97,18 @@ fun AboutScreen(padding: PaddingValues) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Technology Section
         Surface(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surface,
             shadowElevation = 2.dp
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "Teknologi",
+                    text = stringResource(AppStrings.Technology),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
                     color = TextPrimary
@@ -134,10 +138,37 @@ fun AboutScreen(padding: PaddingValues) {
             }
         }
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Developer Section
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 2.dp
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = stringResource(AppStrings.Developer),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(AppStrings.DeveloperTeam),
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "© 2026 Sistem Cerdas Vename",
+            text = stringResource(AppStrings.Copyright),
             fontSize = 12.sp,
             color = TextSecondary
         )
