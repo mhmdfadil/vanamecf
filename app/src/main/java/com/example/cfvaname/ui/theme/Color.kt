@@ -9,21 +9,26 @@ val VenamePrimaryLight = Color(0xFFBBDEFB)   // Light Blue
 val VenameAccent = Color(0xFF00BCD4)         // Cyan accent
 val VenameSecondary = Color(0xFF26A69A)      // Teal
 
-// Background
+// Background - Light Theme
 val VenameBgLight = Color(0xFFF8FAFE)
-val VenameBgDark = Color(0xFF0F1724)
 val VenameSurface = Color(0xFFFFFFFF)
+
+// Background - Dark Theme
+val VenameBgDark = Color(0xFF0F1724)
 val VenameSurfaceDark = Color(0xFF1A2332)
 
 // Sidebar
 val SidebarBg = Color(0xFF0F1724)
 val SidebarItemHover = Color(0xFF1E2D3D)
 
-// Text
+// Text - Light Theme (Dark text on light background)
 val TextPrimary = Color(0xFF1A1A2E)
 val TextSecondary = Color(0xFF6B7280)
 val TextOnPrimary = Color(0xFFFFFFFF)
+
+// Text - Dark Theme (Light text on dark background)
 val TextOnDark = Color(0xFFE0E0E0)
+val TextSecondaryDark = Color(0xFF9CA3AF)
 
 // Status
 val StatusSuccess = Color(0xFF4CAF50)

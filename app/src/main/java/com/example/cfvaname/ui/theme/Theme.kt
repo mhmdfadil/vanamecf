@@ -12,6 +12,7 @@ private val LightColorScheme = lightColorScheme(
     primary = VenamePrimary,
     onPrimary = TextOnPrimary,
     primaryContainer = VenamePrimaryLight,
+    onPrimaryContainer = Color(0xFF003C7E), // Dark blue untuk contrast di light mode
     secondary = VenameSecondary,
     onSecondary = TextOnPrimary,
     background = VenameBgLight,
@@ -19,13 +20,17 @@ private val LightColorScheme = lightColorScheme(
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     error = StatusError,
-    onError = Color.White
+    onError = Color.White,
+    outline = TextSecondary,
+    surfaceVariant = Color(0xFFF0F4F8),
+    onSurfaceVariant = TextSecondary
 )
 
 private val DarkColorScheme = darkColorScheme(
     primary = VenamePrimary,
     onPrimary = TextOnPrimary,
-    primaryContainer = VenamePrimaryDark,
+    primaryContainer = Color(0xFF2A4A6F), // Dark blue container untuk dark mode
+    onPrimaryContainer = Color(0xFFBBDEFB), // Light blue text untuk contrast
     secondary = VenameSecondary,
     onSecondary = TextOnPrimary,
     background = VenameBgDark,
@@ -33,7 +38,10 @@ private val DarkColorScheme = darkColorScheme(
     onBackground = TextOnDark,
     onSurface = TextOnDark,
     error = StatusError,
-    onError = Color.White
+    onError = Color.White,
+    outline = TextSecondaryDark,
+    surfaceVariant = Color(0xFF1E2D3D),
+    onSurfaceVariant = TextSecondaryDark
 )
 
 @Composable
@@ -42,7 +50,7 @@ fun CFVanameTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-
+    
     MaterialTheme(
         colorScheme = colorScheme,
         content = content
