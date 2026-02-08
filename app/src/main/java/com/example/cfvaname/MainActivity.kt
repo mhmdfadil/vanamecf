@@ -19,6 +19,8 @@ import com.example.cfvaname.ui.components.AppScaffold
 import com.example.cfvaname.ui.screens.*
 import com.example.cfvaname.ui.theme.CFVanameTheme
 import com.example.cfvaname.ui.localization.LocalLanguage
+import com.example.cfvaname.ui.localization.stringResource
+import com.example.cfvaname.ui.localization.AppStrings
 import com.example.cfvaname.viewmodel.LoginViewModel
 
 class MainActivity : ComponentActivity() {
@@ -138,7 +140,7 @@ fun VenameApp() {
                         userSession = userSession,
                         onNavigate = handleNavigate,
                         onLogout = handleLogout,
-                        title = "Dashboard"
+                        title = stringResource(AppStrings.Dashboard)
                     ) { padding ->
                         DashboardScreen(
                             userSession = userSession,
@@ -154,7 +156,7 @@ fun VenameApp() {
                         userSession = userSession,
                         onNavigate = handleNavigate,
                         onLogout = handleLogout,
-                        title = "Data Gejala"
+                        title = stringResource(AppStrings.DataGejala)
                     ) { padding ->
                         GejalaScreen(padding = padding)
                     }
@@ -167,7 +169,7 @@ fun VenameApp() {
                         userSession = userSession,
                         onNavigate = handleNavigate,
                         onLogout = handleLogout,
-                        title = "Data Hipotesis"
+                        title = stringResource(AppStrings.DataHipotesis)
                     ) { padding ->
                         HipotesisScreen(padding = padding)
                     }
@@ -180,7 +182,7 @@ fun VenameApp() {
                         userSession = userSession,
                         onNavigate = handleNavigate,
                         onLogout = handleLogout,
-                        title = "Nilai CF"
+                        title = stringResource(AppStrings.NilaiCf)
                     ) { padding ->
                         NilaiCfScreen(padding = padding)
                     }
@@ -193,7 +195,7 @@ fun VenameApp() {
                         userSession = userSession,
                         onNavigate = handleNavigate,
                         onLogout = handleLogout,
-                        title = "Profil"
+                        title = stringResource(AppStrings.Profile)
                     ) { padding ->
                         ProfileScreen(
                             userSession = userSession,
@@ -209,7 +211,7 @@ fun VenameApp() {
                         userSession = userSession,
                         onNavigate = handleNavigate,
                         onLogout = handleLogout,
-                        title = "Laporan"
+                        title = stringResource(AppStrings.Reports)
                     ) { padding ->
                         ReportsScreen(padding = padding)
                     }
@@ -222,7 +224,7 @@ fun VenameApp() {
                         userSession = userSession,
                         onNavigate = handleNavigate,
                         onLogout = handleLogout,
-                        title = "Pengaturan"
+                        title = stringResource(AppStrings.Settings)
                     ) { padding ->
                         SettingsScreen(
                             padding = padding,
@@ -242,7 +244,7 @@ fun VenameApp() {
                         userSession = userSession,
                         onNavigate = handleNavigate,
                         onLogout = handleLogout,
-                        title = "Tentang"
+                        title = stringResource(AppStrings.About)
                     ) { padding ->
                         AboutScreen(padding = padding)
                     }

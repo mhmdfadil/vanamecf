@@ -22,9 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -35,6 +33,8 @@ import com.example.cfvaname.navigation.Screen
 import com.example.cfvaname.navigation.SidebarMenuItem
 import com.example.cfvaname.navigation.getSidebarMenuItems
 import com.example.cfvaname.ui.theme.*
+import com.example.cfvaname.ui.localization.stringResource
+import com.example.cfvaname.ui.localization.AppStrings
 
 /**
  * Layout utama yang dipakai oleh semua Activity setelah login.
@@ -164,7 +164,7 @@ fun TopNavbar(
             IconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Filled.Menu,
-                    contentDescription = "Menu",
+                    contentDescription = stringResource(AppStrings.Menu),
                     tint = VenamePrimary,
                     modifier = Modifier.size(28.dp)
                 )
@@ -225,7 +225,7 @@ fun SidebarDrawer(
             .width(width)
             .offset(x = offset)
             .shadow(16.dp)
-            .background(SidebarBg)
+            .background(MaterialTheme.colorScheme.surface)
             .zIndex(20f)
     ) {
         Column(
@@ -270,7 +270,7 @@ fun SidebarDrawer(
                         IconButton(onClick = onClose) {
                             Icon(
                                 Icons.Filled.Close,
-                                contentDescription = "Tutup",
+                                contentDescription = stringResource(AppStrings.Close),
                                 tint = Color.White
                             )
                         }
@@ -323,7 +323,7 @@ fun SidebarDrawer(
             }
 
             // Logout button
-            Divider(color = Color.White.copy(alpha = 0.1f))
+            Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -333,13 +333,13 @@ fun SidebarDrawer(
             ) {
                 Icon(
                     Icons.Filled.Logout,
-                    contentDescription = "Logout",
+                    contentDescription = stringResource(AppStrings.Logout),
                     tint = StatusError,
                     modifier = Modifier.size(22.dp)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "Keluar",
+                    text = stringResource(AppStrings.Logout),
                     color = StatusError,
                     fontWeight = FontWeight.Medium,
                     fontSize = 15.sp
@@ -357,9 +357,26 @@ fun SidebarItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val bgColor = if (isSelected) VenamePrimary.copy(alpha = 0.15f) else Color.Transparent
-    val textColor = if (isSelected) VenamePrimary else TextOnDark
-    val iconColor = if (isSelected) VenamePrimary else TextOnDark.copy(alpha = 0.7f)
+    val bgColor = if (isSelected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        Color.Transparent
+    }
+    
+    val textColor = if (isSelected) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    
+    val iconColor = if (isSelected) {
+        VenamePrimary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    
+    // Gunakan icon filled untuk selected, outlined untuk unselected
+    val iconToUse = if (isSelected) item.icon else item.iconOutlined
 
     Row(
         modifier = Modifier
@@ -372,14 +389,14 @@ fun SidebarItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = item.icon,
-            contentDescription = item.title,
+            imageVector = iconToUse,
+            contentDescription = stringResource(item.titleRes),
             tint = iconColor,
             modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
-            text = item.title,
+            text = stringResource(item.titleRes),
             color = textColor,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             fontSize = 15.sp,
@@ -410,11 +427,39 @@ fun BottomFooter(
     currentRoute: String,
     onNavigate: (String) -> Unit
 ) {
+    // Data class untuk footer items dengan AppStrings
+    data class FooterItem(
+        val icon: androidx.compose.ui.graphics.vector.ImageVector,
+        val iconOutlined: androidx.compose.ui.graphics.vector.ImageVector,
+        val labelRes: AppStrings,
+        val route: String
+    )
+    
     val footerItems = listOf(
-        Triple(Icons.Filled.Dashboard, "Home", Screen.Dashboard.route),
-        Triple(Icons.Filled.Assessment, "Laporan", Screen.Reports.route),
-        Triple(Icons.Filled.Person, "Profil", Screen.Profile.route),
-        Triple(Icons.Filled.Settings, "Setting", Screen.Settings.route)
+        FooterItem(
+            Icons.Filled.Dashboard,
+            Icons.Outlined.Dashboard,
+            AppStrings.Home,
+            Screen.Dashboard.route
+        ),
+        FooterItem(
+            Icons.Filled.Assessment,
+            Icons.Outlined.Assessment,
+            AppStrings.Reports,
+            Screen.Reports.route
+        ),
+        FooterItem(
+            Icons.Filled.Person,
+            Icons.Outlined.Person,
+            AppStrings.Profile,
+            Screen.Profile.route
+        ),
+        FooterItem(
+            Icons.Filled.Settings,
+            Icons.Outlined.Settings,
+            AppStrings.Settings,
+            Screen.Settings.route
+        )
     )
 
     Surface(
@@ -429,26 +474,27 @@ fun BottomFooter(
                 .padding(vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            footerItems.forEach { (icon, label, route) ->
-                val isSelected = currentRoute == route
-                val color = if (isSelected) VenamePrimary else TextSecondary
+            footerItems.forEach { item ->
+                val isSelected = currentRoute == item.route
+                val color = if (isSelected) VenamePrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                val iconToUse = if (isSelected) item.icon else item.iconOutlined
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { onNavigate(route) }
+                        .clickable { onNavigate(item.route) }
                         .padding(horizontal = 12.dp, vertical = 4.dp)
                 ) {
                     Icon(
-                        imageVector = icon,
-                        contentDescription = label,
+                        imageVector = iconToUse,
+                        contentDescription = stringResource(item.labelRes),
                         tint = color,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = label,
+                        text = stringResource(item.labelRes),
                         color = color,
                         fontSize = 11.sp,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal

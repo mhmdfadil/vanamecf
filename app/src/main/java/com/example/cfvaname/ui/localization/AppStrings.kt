@@ -5,6 +5,8 @@ sealed class AppStrings(val id: String, val en: String) {
     // NAVIGATION & SCREENS
     // ===================================================
     object Dashboard : AppStrings("Dasbor", "Dashboard")
+    object Home : AppStrings("Beranda", "Home")
+    object Menu : AppStrings("Menu", "Menu")
     object Gejala : AppStrings("Gejala", "Symptoms")
     object Hipotesis : AppStrings("Hipotesis", "Hypothesis")
     object NilaiCf : AppStrings("Nilai CF", "CF Values")
