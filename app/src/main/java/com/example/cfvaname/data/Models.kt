@@ -116,3 +116,28 @@ data class NilaiCfInsertRequest(
     val keterangan: String,
     val nilai: Double = 0.0
 )
+
+// ===================================================
+// RULE MODELS
+// ===================================================
+
+/**
+ * Model Rule - mapping ke tabel rules di Supabase
+ */
+@Serializable
+data class Rule(
+    val id: Long = 0,
+    @SerialName("gejala_id") val gejalaId: Long = 0,
+    @SerialName("cf_id") val cfId: Long = 0,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+/**
+ * Request body untuk insert/update rule
+ */
+@Serializable
+data class RuleRequest(
+    @SerialName("gejala_id") val gejalaId: Long,
+    @SerialName("cf_id") val cfId: Long
+)

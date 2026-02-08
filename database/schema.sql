@@ -274,3 +274,40 @@ $$ LANGUAGE plpgsql;
 
 -- ====================================================================
 
+-- =====================================================
+-- SISTEM CERDAS VENAME - Tabel Rules
+-- Jalankan SQL ini di Supabase SQL Editor
+-- (setelah supabase_gejalas.sql dan supabase_nilai_cfs.sql)
+-- =====================================================
+
+-- 1. Buat tabel rules
+CREATE TABLE IF NOT EXISTS public.rules (
+    id BIGSERIAL PRIMARY KEY,
+    gejala_id BIGINT NOT NULL REFERENCES public.gejalas(id) ON DELETE CASCADE,
+    cf_id BIGINT NOT NULL REFERENCES public.nilai_cfs(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 2. Index
+CREATE INDEX IF NOT EXISTS idx_rules_gejala ON public.rules(gejala_id);
+CREATE INDEX IF NOT EXISTS idx_rules_cf ON public.rules(cf_id);
+
+-- 3. Unique constraint: 1 gejala hanya punya 1 rule
+CREATE UNIQUE INDEX IF NOT EXISTS idx_rules_gejala_unique ON public.rules(gejala_id);
+
+-- 4. Enable RLS
+ALTER TABLE public.rules ENABLE ROW LEVEL SECURITY;
+
+-- 5. Policy
+CREATE POLICY "Allow full access to rules" ON public.rules
+    FOR ALL USING (TRUE) WITH CHECK (TRUE);
+
+-- 6. Trigger auto-update updated_at
+CREATE TRIGGER trigger_rules_updated_at
+    BEFORE UPDATE ON public.rules
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at();
+
+-- =====================================================
+

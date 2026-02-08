@@ -150,6 +150,28 @@ sealed class AppStrings(val id: String, val en: String) {
     object ConfirmPassword : AppStrings("Konfirmasi Kata Sandi", "Confirm Password")
     
     // ===================================================
+    // RULES
+    // ===================================================
+    object Rules : AppStrings("Aturan / Rules", "Rules")
+    object ConnectSymptomWithCfValue : AppStrings("Hubungkan gejala dengan nilai CF", "Connect symptoms with CF values")
+    object Total : AppStrings("Total", "Total")
+    object LoadingRulesData : AppStrings("Memuat data rules...", "Loading rules data...")
+    object NoRulesData : AppStrings("Belum ada data rules", "No rules data")
+    object AddRule : AppStrings("Tambah Rule", "Add Rule")
+    object AddNewRule : AppStrings("Tambah Rule Baru", "Add New Rule")
+    object EditRule : AppStrings("Edit Rule", "Edit Rule")
+    object DeleteRule : AppStrings("Hapus Rule?", "Delete Rule?")
+    object Rule : AppStrings("Rule", "Rule")
+    object Symptom : AppStrings("Gejala", "Symptom")
+    object SelectSymptomPlaceholder : AppStrings("Pilih gejala...", "Select symptom...")
+    object NoSymptomAvailable : AppStrings("Tidak ada gejala tersedia", "No symptoms available")
+    object SelectCfValuePlaceholder : AppStrings("Pilih nilai CF...", "Select CF value...")
+    object NoCfValueAvailable : AppStrings("Tidak ada nilai CF", "No CF values available")
+    object ConfirmDeleteRule : AppStrings("Anda yakin ingin menghapus rule ini?", "Are you sure you want to delete this rule?")
+    object Saving : AppStrings("Menyimpan...", "Saving...")
+    object IdNotFound : AppStrings("tidak ditemukan", "not found")
+    
+    // ===================================================
     // REPORTS
     // ===================================================
     object DiagnosisReports : AppStrings("Laporan Diagnosis", "Diagnosis Reports")

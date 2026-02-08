@@ -188,6 +188,19 @@ fun VenameApp() {
                     }
                 }
 
+                // === RULES ===
+                composable(Screen.Rule.route) {
+                    AppScaffold(
+                        currentRoute = Screen.Rule.route,
+                        userSession = userSession,
+                        onNavigate = handleNavigate,
+                        onLogout = handleLogout,
+                        title = stringResource(AppStrings.Rules)
+                    ) { padding ->
+                        RuleScreen(padding = padding)
+                    }
+                }
+
                 // === PROFILE ===
                 composable(Screen.Profile.route) {
                     AppScaffold(

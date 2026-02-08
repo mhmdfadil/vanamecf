@@ -47,6 +47,12 @@ fun getSidebarMenuItems(): List<SidebarMenuItem> {
             route = Screen.NilaiCf.route
         ),
         SidebarMenuItem(
+            titleRes = AppStrings.Rules,
+            icon = Icons.Filled.Rule,
+            iconOutlined = Icons.Outlined.Rule,
+            route = Screen.Rule.route
+        ),
+        SidebarMenuItem(
             titleRes = AppStrings.Reports,
             icon = Icons.Filled.Assessment,
             iconOutlined = Icons.Outlined.Assessment,
