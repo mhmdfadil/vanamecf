@@ -32,6 +32,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cfvaname.data.Hipotesis
 import com.example.cfvaname.ui.theme.*
+import com.example.cfvaname.ui.localization.*
 import com.example.cfvaname.viewmodel.HipotesisViewModel
 
 @Composable
@@ -69,16 +70,16 @@ fun HipotesisScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Data Hipotesis", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                            Text("Kelola data hipotesis penyakit", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+                            Text(stringResource(AppStrings.DataHipotesis), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                            Text("Kelola data hipotesis penyakit", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f), fontSize = 13.sp)
                         }
-                        Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(alpha = 0.2f)) {
+                        Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)) {
                             Column(
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("${uiState.hipotesisList.size}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                                Text("Total", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp)
+                                Text("${uiState.hipotesisList.size}", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                Text(stringResource(AppStrings.TotalHypothesis), color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f), fontSize = 11.sp)
                             }
                         }
                     }
@@ -92,12 +93,12 @@ fun HipotesisScreen(
             OutlinedTextField(
                 value = uiState.searchQuery,
                 onValueChange = { hipotesisViewModel.onSearchQueryChange(it) },
-                placeholder = { Text("Cari kode atau nama hipotesis...", fontSize = 14.sp) },
+                placeholder = { Text(stringResource(AppStrings.SearchHypothesis), fontSize = 14.sp) },
                 leadingIcon = { Icon(Icons.Filled.Search, null, tint = VenamePrimary, modifier = Modifier.size(20.dp)) },
                 trailingIcon = {
                     if (uiState.searchQuery.isNotBlank()) {
                         IconButton(onClick = { hipotesisViewModel.onSearchQueryChange("") }) {
-                            Icon(Icons.Filled.Clear, "Hapus", tint = TextSecondary, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Filled.Clear, stringResource(AppStrings.Delete), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                         }
                     }
                 },
@@ -111,7 +112,7 @@ fun HipotesisScreen(
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                modifier = Modifier.fillMaxWidth().height(52.dp)
+                modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 16.dp)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -123,19 +124,19 @@ fun HipotesisScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator(color = VenamePrimary)
                             Spacer(Modifier.height(12.dp))
-                            Text("Memuat data hipotesis...", color = TextSecondary, fontSize = 14.sp)
+                            Text(stringResource(AppStrings.Loading), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                         }
                     }
                 }
                 uiState.hipotesisList.isEmpty() -> {
                     Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Filled.SearchOff, null, tint = TextSecondary.copy(0.5f), modifier = Modifier.size(64.dp))
+                            Icon(Icons.Filled.SearchOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.5f), modifier = Modifier.size(64.dp))
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 if (uiState.searchQuery.isNotBlank()) "Tidak ditemukan untuk\n\"${uiState.searchQuery}\""
-                                else "Belum ada data hipotesis",
-                                color = TextSecondary, fontSize = 14.sp, textAlign = TextAlign.Center
+                                else stringResource(AppStrings.NoHypothesis),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -161,8 +162,8 @@ fun HipotesisScreen(
             onClick = { hipotesisViewModel.showAddDialog() },
             containerColor = VenamePrimary, contentColor = Color.White,
             shape = CircleShape,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 16.dp, end = 4.dp)
-        ) { Icon(Icons.Filled.Add, "Tambah Hipotesis") }
+            modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 16.dp, end = 16.dp)
+        ) { Icon(Icons.Filled.Add, stringResource(AppStrings.AddHypothesis)) }
 
         SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
     }
@@ -170,7 +171,7 @@ fun HipotesisScreen(
     // Dialogs
     if (uiState.showAddDialog) {
         HipotesisFormDialog(
-            title = "Tambah Hipotesis Baru", uiState = uiState,
+            title = stringResource(AppStrings.AddHypothesis), uiState = uiState,
             onKodeChange = { hipotesisViewModel.onFormKodeChange(it) },
             onNamaChange = { hipotesisViewModel.onFormNamaChange(it) },
             onDeskripsiChange = { hipotesisViewModel.onFormDeskripsiChange(it) },
@@ -181,7 +182,7 @@ fun HipotesisScreen(
     }
     if (uiState.showEditDialog) {
         HipotesisFormDialog(
-            title = "Edit Hipotesis", uiState = uiState,
+            title = stringResource(AppStrings.EditHypothesis), uiState = uiState,
             onKodeChange = { hipotesisViewModel.onFormKodeChange(it) },
             onNamaChange = { hipotesisViewModel.onFormNamaChange(it) },
             onDeskripsiChange = { hipotesisViewModel.onFormDeskripsiChange(it) },
@@ -217,7 +218,7 @@ fun HipotesisCard(
     onDelete: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp
@@ -232,18 +233,18 @@ fun HipotesisCard(
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(hipotesis.nama, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = TextPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(hipotesis.nama, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (!hipotesis.deskripsi.isNullOrBlank()) {
                     Spacer(Modifier.height(4.dp))
-                    Text(hipotesis.deskripsi, fontSize = 12.sp, color = TextSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(hipotesis.deskripsi, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Filled.Edit, "Edit", tint = VenamePrimary, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Edit, stringResource(AppStrings.Edit), tint = VenamePrimary, modifier = Modifier.size(18.dp))
                 }
                 IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Filled.Delete, "Hapus", tint = StatusError, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Delete, stringResource(AppStrings.Delete), tint = StatusError, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -256,12 +257,12 @@ fun HipotesisCard(
 @Composable
 fun HipotesisDetailDialog(hipotesis: Hipotesis, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp, modifier = Modifier.fillMaxWidth()) {
+        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp, modifier = Modifier.fillMaxWidth(0.9f)) {
             Column(Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Detail Hipotesis", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
+                    Text("Detail Hipotesis", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Filled.Close, "Tutup", tint = TextSecondary)
+                        Icon(Icons.Filled.Close, stringResource(AppStrings.Close), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
@@ -272,14 +273,14 @@ fun HipotesisDetailDialog(hipotesis: Hipotesis, onDismiss: () -> Unit) {
                 }
                 Spacer(Modifier.height(12.dp))
 
-                Text(hipotesis.nama, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
+                Text(hipotesis.nama, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(16.dp))
 
                 if (!hipotesis.deskripsi.isNullOrBlank()) {
                     Text("Deskripsi", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = VenamePrimary)
                     Spacer(Modifier.height(4.dp))
                     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                        Text(hipotesis.deskripsi, fontSize = 14.sp, color = TextPrimary, lineHeight = 22.sp, modifier = Modifier.padding(12.dp))
+                        Text(hipotesis.deskripsi, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface, lineHeight = 22.sp, modifier = Modifier.padding(12.dp))
                     }
                     Spacer(Modifier.height(16.dp))
                 }
@@ -291,14 +292,14 @@ fun HipotesisDetailDialog(hipotesis: Hipotesis, onDismiss: () -> Unit) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
                             Icon(Icons.Filled.Lightbulb, null, tint = StatusSuccess, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(hipotesis.rekomendasi, fontSize = 14.sp, color = TextPrimary, lineHeight = 22.sp)
+                            Text(hipotesis.rekomendasi, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface, lineHeight = 22.sp)
                         }
                     }
                 }
 
                 Spacer(Modifier.height(20.dp))
                 Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = VenamePrimary)) {
-                    Text("Tutup")
+                    Text(stringResource(AppStrings.Close))
                 }
             }
         }
@@ -320,19 +321,19 @@ fun HipotesisFormDialog(
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = { if (!uiState.isSaving) onDismiss() }) {
-        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp, modifier = Modifier.fillMaxWidth()) {
+        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp, modifier = Modifier.fillMaxWidth(0.9f)) {
             Column(Modifier.padding(24.dp).verticalScroll(rememberScrollState())) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
+                    Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                     IconButton(onClick = { if (!uiState.isSaving) onDismiss() }, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Filled.Close, "Tutup", tint = TextSecondary)
+                        Icon(Icons.Filled.Close, stringResource(AppStrings.Close), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = uiState.formKode, onValueChange = onKodeChange,
-                    label = { Text("Kode Hipotesis") }, placeholder = { Text("Contoh: H001") },
+                    label = { Text(stringResource(AppStrings.HypothesisCode)) }, placeholder = { Text("Contoh: H001") },
                     leadingIcon = { Icon(Icons.Filled.Tag, null, tint = VenamePrimary) },
                     singleLine = true, shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VenamePrimary, cursorColor = VenamePrimary),
@@ -342,7 +343,7 @@ fun HipotesisFormDialog(
 
                 OutlinedTextField(
                     value = uiState.formNama, onValueChange = onNamaChange,
-                    label = { Text("Nama Hipotesis") }, placeholder = { Text("Contoh: COVID-19") },
+                    label = { Text(stringResource(AppStrings.HypothesisName)) }, placeholder = { Text("Contoh: COVID-19") },
                     leadingIcon = { Icon(Icons.Filled.Biotech, null, tint = VenamePrimary) },
                     singleLine = true, shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VenamePrimary, cursorColor = VenamePrimary),
@@ -352,7 +353,7 @@ fun HipotesisFormDialog(
 
                 OutlinedTextField(
                     value = uiState.formDeskripsi, onValueChange = onDeskripsiChange,
-                    label = { Text("Deskripsi (opsional)") },
+                    label = { Text(stringResource(AppStrings.HypothesisDescription) + " (opsional)") },
                     placeholder = { Text("Penjelasan tentang hipotesis...") },
                     shape = RoundedCornerShape(12.dp), minLines = 3, maxLines = 5,
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VenamePrimary, cursorColor = VenamePrimary),
@@ -386,8 +387,8 @@ fun HipotesisFormDialog(
                     OutlinedButton(
                         onClick = { if (!uiState.isSaving) onDismiss() },
                         modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
-                    ) { Text("Batal") }
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
+                    ) { Text(stringResource(AppStrings.Cancel)) }
 
                     Button(
                         onClick = onSave, modifier = Modifier.weight(1f),
@@ -399,7 +400,7 @@ fun HipotesisFormDialog(
                             CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
                             Spacer(Modifier.width(8.dp))
                         }
-                        Text(if (uiState.isSaving) "Menyimpan..." else "Simpan")
+                        Text(if (uiState.isSaving) stringResource(AppStrings.Loading) else stringResource(AppStrings.Save))
                     }
                 }
             }
@@ -424,10 +425,10 @@ fun HipotesisDeleteDialog(
                 Icon(Icons.Filled.DeleteForever, null, tint = StatusError, modifier = Modifier.size(30.dp))
             }
         },
-        title = { Text("Hapus Hipotesis?", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+        title = { Text(stringResource(AppStrings.DeleteHypothesis), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Anda yakin ingin menghapus hipotesis ini?", textAlign = TextAlign.Center, color = TextSecondary, fontSize = 14.sp)
+                Text(stringResource(AppStrings.DeleteConfirmation), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 Spacer(Modifier.height(12.dp))
                 Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -435,7 +436,7 @@ fun HipotesisDeleteDialog(
                             Text(hipotesis.kode, color = VenameSecondary, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                         }
                         Spacer(Modifier.width(10.dp))
-                        Text(hipotesis.nama, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = TextPrimary)
+                        Text(hipotesis.nama, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
                 Spacer(Modifier.height(4.dp))
@@ -445,11 +446,11 @@ fun HipotesisDeleteDialog(
         confirmButton = {
             Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = StatusError), shape = RoundedCornerShape(10.dp), enabled = !isSaving) {
                 if (isSaving) { CircularProgressIndicator(Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
-                Text(if (isSaving) "Menghapus..." else "Hapus")
+                Text(if (isSaving) "Menghapus..." else stringResource(AppStrings.Delete))
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = { if (!isSaving) onDismiss() }, shape = RoundedCornerShape(10.dp)) { Text("Batal") }
+            OutlinedButton(onClick = { if (!isSaving) onDismiss() }, shape = RoundedCornerShape(10.dp)) { Text(stringResource(AppStrings.Cancel)) }
         }
     )
 }
