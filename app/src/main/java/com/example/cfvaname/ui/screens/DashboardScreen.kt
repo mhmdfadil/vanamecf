@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cfvaname.data.UserSession
 import com.example.cfvaname.ui.theme.*
-import com.example.cfvaname.ui.localization.*
 
 @Composable
 fun DashboardScreen(
@@ -32,10 +31,7 @@ fun DashboardScreen(
             .fillMaxSize()
             .padding(padding)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
-
         // Welcome Banner
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -55,15 +51,15 @@ fun DashboardScreen(
             ) {
                 Column {
                     Text(
-                        text = stringResource(AppStrings.WelcomeBack) + ", ${userSession?.fullName ?: "User"} 👋",
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        text = "Halo, ${userSession?.fullName ?: "User"} 👋",
+                        color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = stringResource(AppStrings.AppName),
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                        text = "Selamat datang di Sistem Cerdas Vename",
+                        color = Color.White.copy(alpha = 0.85f),
                         fontSize = 14.sp
                     )
                 }
@@ -72,16 +68,6 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Statistics Title
-        Text(
-            text = stringResource(AppStrings.Statistics),
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
         // Quick Stats Grid
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -89,16 +75,16 @@ fun DashboardScreen(
         ) {
             DashboardStatCard(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Filled.LocalActivity,
-                value = "24",
-                label = stringResource(AppStrings.TotalSymptoms),
+                icon = Icons.Filled.People,
+                value = "1,234",
+                label = "Total Pengguna",
                 color = VenamePrimary
             )
             DashboardStatCard(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Filled.Psychology,
-                value = "15",
-                label = stringResource(AppStrings.TotalHypothesis),
+                icon = Icons.Filled.TrendingUp,
+                value = "89%",
+                label = "Performa",
                 color = StatusSuccess
             )
         }
@@ -111,9 +97,9 @@ fun DashboardScreen(
         ) {
             DashboardStatCard(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Filled.Assignment,
-                value = "8",
-                label = stringResource(AppStrings.TotalDiagnosis),
+                icon = Icons.Filled.Storage,
+                value = "45 GB",
+                label = "Data Terkelola",
                 color = VenameAccent
             )
             DashboardStatCard(
@@ -129,10 +115,10 @@ fun DashboardScreen(
 
         // Recent Activity
         Text(
-            text = stringResource(AppStrings.RecentActivities),
+            text = "Aktivitas Terbaru",
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.onBackground
+            color = TextPrimary
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -189,13 +175,13 @@ fun DashboardStatCard(
                 text = value,
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
-                color = MaterialTheme.colorScheme.onSurface
+                color = TextPrimary
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = TextSecondary
             )
         }
     }
@@ -239,12 +225,12 @@ fun ActivityItem(
                     text = title,
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = TextPrimary
                 )
                 Text(
                     text = time,
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = TextSecondary
                 )
             }
         }

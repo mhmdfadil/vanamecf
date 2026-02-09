@@ -141,3 +141,64 @@ data class RuleRequest(
     @SerialName("gejala_id") val gejalaId: Long,
     @SerialName("cf_id") val cfId: Long
 )
+
+// ===================================================
+// KUESIONER MODELS
+// ===================================================
+
+@Serializable
+data class Kuesioner(
+    val id: Long = 0,
+    @SerialName("nama_petambak") val namaPetambak: String = "",
+    @SerialName("no_hp") val noHp: String = "",
+    @SerialName("lokasi_tambak") val lokasiTambak: String = "",
+    @SerialName("usia_udang") val usiaUdang: Int = 0,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+@Serializable
+data class KuesionerInsertRequest(
+    @SerialName("nama_petambak") val namaPetambak: String,
+    @SerialName("no_hp") val noHp: String,
+    @SerialName("lokasi_tambak") val lokasiTambak: String,
+    @SerialName("usia_udang") val usiaUdang: Int
+)
+
+@Serializable
+data class KuesionerData(
+    val id: Long = 0,
+    @SerialName("kuesioner_id") val kuesionerId: Long = 0,
+    @SerialName("gejala_id") val gejalaId: Long = 0,
+    @SerialName("cf_value") val cfValue: Long = 0,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+@Serializable
+data class KuesionerDataInsertRequest(
+    @SerialName("kuesioner_id") val kuesionerId: Long,
+    @SerialName("gejala_id") val gejalaId: Long,
+    @SerialName("cf_value") val cfValue: Long
+)
+
+// ===================================================
+// CF CALCULATION HELPER MODELS (non-Supabase, for UI)
+// ===================================================
+
+data class CfCalculationStep(
+    val gejalaKode: String,
+    val gejalaNama: String,
+    val cfPakar: Double,
+    val cfUser: Double,
+    val cfGejala: Double,
+    val cfSebelum: Double,
+    val cfSesudah: Double
+)
+
+data class HipotesisResult(
+    val hipotesis: Hipotesis,
+    val cfCombine: Double,
+    val percentage: Double,
+    val steps: List<CfCalculationStep>
+)

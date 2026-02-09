@@ -201,6 +201,19 @@ fun VenameApp() {
                     }
                 }
 
+                // === KUESIONER (Diagnosa) ===
+                composable(Screen.Kuesioner.route) {
+                    AppScaffold(
+                        currentRoute = Screen.Kuesioner.route,
+                        userSession = userSession,
+                        onNavigate = handleNavigate,
+                        onLogout = handleLogout,
+                        title = stringResource(AppStrings.Questionnaire)
+                    ) { padding ->
+                        KuesionerScreen(padding = padding)
+                    }
+                }
+
                 // === PROFILE ===
                 composable(Screen.Profile.route) {
                     AppScaffold(

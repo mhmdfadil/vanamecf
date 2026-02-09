@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Path untuk files directory -->
+    <files-path
+        name="vename_reports"
+        path="VENAME_Reports/" />
+
+    <!-- Path untuk cache directory (jika diperlukan) -->
+    <cache-path
+        name="pdf_cache"
+        path="." />
+
+    <!-- Path untuk external files directory (optional) -->
+    <external-files-path
+        name="external_files"
+        path="VENAME_Reports/" />
+
+    <!-- Path untuk Downloads directory (jika ingin akses Downloads) -->
+    <external-path
+        name="downloads"
+        path="Download/VENAME_Reports/" />
+</paths>

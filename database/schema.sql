@@ -311,3 +311,53 @@ CREATE TRIGGER trigger_rules_updated_at
 
 -- =====================================================
 
+-- =====================================================
+-- SISTEM CERDAS VENAME - Tabel Kuesioner & Kuesioner Data
+-- Jalankan SQL ini di Supabase SQL Editor
+-- =====================================================
+
+-- 1. Tabel kuesioners
+CREATE TABLE IF NOT EXISTS public.kuesioners (
+    id BIGSERIAL PRIMARY KEY,
+    nama_petambak TEXT NOT NULL,
+    no_hp TEXT NOT NULL DEFAULT '',
+    lokasi_tambak TEXT NOT NULL DEFAULT '',
+    usia_udang INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_kuesioners_nama ON public.kuesioners(nama_petambak);
+
+ALTER TABLE public.kuesioners ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow full access to kuesioners" ON public.kuesioners
+    FOR ALL USING (TRUE) WITH CHECK (TRUE);
+
+CREATE TRIGGER trigger_kuesioners_updated_at
+    BEFORE UPDATE ON public.kuesioners
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at();
+
+-- 2. Tabel kuesioner_data (jawaban gejala + cf_value user)
+CREATE TABLE IF NOT EXISTS public.kuesioner_data (
+    id BIGSERIAL PRIMARY KEY,
+    kuesioner_id BIGINT NOT NULL REFERENCES public.kuesioners(id) ON DELETE CASCADE,
+    gejala_id BIGINT NOT NULL REFERENCES public.gejalas(id) ON DELETE CASCADE,
+    cf_value BIGINT NOT NULL REFERENCES public.nilai_cfs(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_kuesioner_data_kuesioner ON public.kuesioner_data(kuesioner_id);
+CREATE INDEX IF NOT EXISTS idx_kuesioner_data_gejala ON public.kuesioner_data(gejala_id);
+
+ALTER TABLE public.kuesioner_data ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow full access to kuesioner_data" ON public.kuesioner_data
+    FOR ALL USING (TRUE) WITH CHECK (TRUE);
+
+CREATE TRIGGER trigger_kuesioner_data_updated_at
+    BEFORE UPDATE ON public.kuesioner_data
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at();

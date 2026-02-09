@@ -9,7 +9,7 @@ import com.example.cfvaname.ui.localization.AppStrings
 import com.example.cfvaname.ui.localization.stringResource
 
 data class SidebarMenuItem(
-    val titleRes: AppStrings, // Menggunakan AppStrings untuk multi-bahasa
+    val titleRes: AppStrings,
     val icon: ImageVector,
     val iconOutlined: ImageVector,
     val route: String,
@@ -29,19 +29,19 @@ fun getSidebarMenuItems(): List<SidebarMenuItem> {
             route = Screen.Dashboard.route
         ),
         SidebarMenuItem(
-            titleRes = AppStrings.Hipotesis,
+            titleRes = AppStrings.DataHipotesis,
             icon = Icons.Filled.Biotech,
             iconOutlined = Icons.Outlined.Biotech,
             route = Screen.Hipotesis.route
         ),
         SidebarMenuItem(
-            titleRes = AppStrings.Gejala,
+            titleRes = AppStrings.DataGejala,
             icon = Icons.Filled.MedicalServices,
             iconOutlined = Icons.Outlined.MedicalServices,
             route = Screen.Gejala.route
         ),
         SidebarMenuItem(
-            titleRes = AppStrings.NilaiCf,
+            titleRes = AppStrings.DataNilaiCf,
             icon = Icons.Filled.BarChart,
             iconOutlined = Icons.Outlined.BarChart,
             route = Screen.NilaiCf.route
@@ -51,6 +51,12 @@ fun getSidebarMenuItems(): List<SidebarMenuItem> {
             icon = Icons.Filled.Rule,
             iconOutlined = Icons.Outlined.Rule,
             route = Screen.Rule.route
+        ),
+        SidebarMenuItem(
+            titleRes = AppStrings.Questionnaire,
+            icon = Icons.Filled.Assignment,
+            iconOutlined = Icons.Outlined.Assignment,
+            route = Screen.Kuesioner.route
         ),
         SidebarMenuItem(
             titleRes = AppStrings.Reports,
