@@ -584,16 +584,16 @@ fun BottomFooter(
             Screen.Dashboard.route
         ),
         FooterItem(
+            Icons.Filled.ListAlt,
+            Icons.Outlined.ListAlt,
+            AppStrings.Questionnaire,
+            Screen.Kuesioner.route
+        ),
+        FooterItem(
             Icons.Filled.Assessment,
             Icons.Outlined.Assessment,
             AppStrings.Reports,
             Screen.Reports.route
-        ),
-        FooterItem(
-            Icons.Filled.Person,
-            Icons.Outlined.Person,
-            AppStrings.Profile,
-            Screen.Profile.route
         ),
         FooterItem(
             Icons.Filled.Settings,

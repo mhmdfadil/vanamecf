@@ -12,6 +12,7 @@ sealed class AppStrings(val id: String, val en: String) {
     object NilaiCf : AppStrings("Nilai CF", "CF Values")
     object Profile : AppStrings("Profil", "Profile")
     object Reports : AppStrings("Laporan", "Reports")
+    object Kuesioner : AppStrings("Kuesioner", "Questionnaire")
     object Settings : AppStrings("Pengaturan", "Settings")
     object About : AppStrings("Tentang", "About")
     
