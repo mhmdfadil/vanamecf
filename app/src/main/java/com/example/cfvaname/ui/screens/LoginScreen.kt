@@ -104,7 +104,7 @@ fun LoginScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Masuk ke akun Sistem Cerdas Vename",
+                    text = "Masuk ke akun Sistem Cerdas Vaname",
                     color = Color.White.copy(alpha = 0.8f),
                     fontSize = 14.sp
                 )
@@ -298,7 +298,7 @@ fun LoginScreen(
                                 color = VenamePrimaryDark
                             )
                             Text(
-                                text = "Admin: admin@vename.com / admin123\nUser: user@vename.com / user123",
+                                text = "Admin: admin@vaname.com / admin123\nUser: user@vaname.com / user123",
                                 fontSize = 11.sp,
                                 color = VenamePrimaryDark.copy(alpha = 0.8f),
                                 lineHeight = 16.sp
@@ -319,7 +319,7 @@ fun LoginScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "© 2026 Sistem Cerdas Vename",
+                text = "© 2026 Sistem Cerdas Vaname",
                 color = TextSecondary,
                 fontSize = 12.sp
             )

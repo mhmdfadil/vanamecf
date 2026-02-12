@@ -3,6 +3,10 @@ package com.example.cfvaname.data
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 
+/**
+ * Repository untuk tabel kuesioners dan kuesioner_data di Supabase
+ * PERUBAHAN: kuesioner_data sekarang merujuk ke gejala_hipotesis_id (bukan gejala_id)
+ */
 class KuesionerRepository {
 
     private val client = SupabaseClient.supabase
@@ -95,6 +99,17 @@ class KuesionerRepository {
             Result.success(result)
         } catch (e: Exception) {
             Result.failure(Exception("Gagal memuat hipotesis: ${e.localizedMessage}"))
+        }
+    }
+
+    suspend fun getAllGejalaHipotesis(): Result<List<GejalaHipotesis>> {
+        return try {
+            val result = client.postgrest.from("gejala_hipotesis")
+                .select { order("id", Order.ASCENDING) }
+                .decodeList<GejalaHipotesis>()
+            Result.success(result)
+        } catch (e: Exception) {
+            Result.failure(Exception("Gagal memuat gejala-hipotesis: ${e.localizedMessage}"))
         }
     }
 

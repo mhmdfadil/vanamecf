@@ -3,6 +3,10 @@ package com.example.cfvaname.data
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 
+/**
+ * Repository CRUD untuk tabel rules di Supabase
+ * PERUBAHAN: Rules sekarang merujuk ke gejala_hipotesis_id (bukan gejala_id)
+ */
 class RuleRepository {
 
     private val client = SupabaseClient.supabase
@@ -31,7 +35,7 @@ class RuleRepository {
             Result.success(result)
         } catch (e: Exception) {
             val msg = if (e.message?.contains("duplicate") == true || e.message?.contains("unique") == true) {
-                "Gejala tersebut sudah memiliki rule"
+                "Pasangan gejala-hipotesis tersebut sudah memiliki rule"
             } else {
                 "Gagal menambah rule: ${e.localizedMessage}"
             }
@@ -50,7 +54,7 @@ class RuleRepository {
             Result.success(result)
         } catch (e: Exception) {
             val msg = if (e.message?.contains("duplicate") == true || e.message?.contains("unique") == true) {
-                "Gejala tersebut sudah memiliki rule"
+                "Pasangan gejala-hipotesis tersebut sudah memiliki rule"
             } else {
                 "Gagal mengupdate rule: ${e.localizedMessage}"
             }

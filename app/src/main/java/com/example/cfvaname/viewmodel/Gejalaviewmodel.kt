@@ -3,6 +3,9 @@ package com.example.cfvaname.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cfvaname.data.Gejala
+import com.example.cfvaname.data.GejalaHipotesis
+import com.example.cfvaname.data.GejalaHipotesisRepository
+import com.example.cfvaname.data.GejalaHipotesisRequest
 import com.example.cfvaname.data.GejalaRepository
 import com.example.cfvaname.data.GejalaRequest
 import com.example.cfvaname.data.Hipotesis
@@ -15,6 +18,7 @@ import kotlinx.coroutines.launch
 data class GejalaUiState(
     val gejalaList: List<Gejala> = emptyList(),
     val hipotesisList: List<Hipotesis> = emptyList(),
+    val gejalaHipotesisList: List<GejalaHipotesis> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null,
@@ -27,7 +31,7 @@ data class GejalaUiState(
     // Form fields
     val formKode: String = "",
     val formNama: String = "",
-    val formHipotesisId: Long = 0,
+    val formSelectedHipotesisIds: Set<Long> = emptySet(), // Many-to-many: multiple hipotesis
     val formError: String? = null,
     val isSaving: Boolean = false
 )
@@ -36,12 +40,14 @@ class GejalaViewModel : ViewModel() {
 
     private val repository = GejalaRepository()
     private val hipotesisRepository = HipotesisRepository()
+    private val ghRepository = GejalaHipotesisRepository()
 
     private val _uiState = MutableStateFlow(GejalaUiState())
     val uiState: StateFlow<GejalaUiState> = _uiState.asStateFlow()
 
     init {
         loadHipotesisList()
+        loadGejalaHipotesis()
         loadGejala()
     }
 
@@ -50,6 +56,17 @@ class GejalaViewModel : ViewModel() {
             hipotesisRepository.getAll().fold(
                 onSuccess = { list ->
                     _uiState.value = _uiState.value.copy(hipotesisList = list)
+                },
+                onFailure = { /* silent */ }
+            )
+        }
+    }
+
+    private fun loadGejalaHipotesis() {
+        viewModelScope.launch {
+            ghRepository.getAll().fold(
+                onSuccess = { list ->
+                    _uiState.value = _uiState.value.copy(gejalaHipotesisList = list)
                 },
                 onFailure = { /* silent */ }
             )
@@ -77,19 +94,35 @@ class GejalaViewModel : ViewModel() {
         loadGejala()
     }
 
-    fun getHipotesisNama(hipotesisId: Long): String {
-        return _uiState.value.hipotesisList.find { it.id == hipotesisId }?.nama ?: "ID: $hipotesisId"
+    /**
+     * Mendapatkan daftar hipotesis yang terkait dengan gejala tertentu
+     * melalui tabel pivot gejala_hipotesis
+     */
+    fun getHipotesisForGejala(gejalaId: Long): List<Hipotesis> {
+        val ghList = _uiState.value.gejalaHipotesisList.filter { it.gejalaId == gejalaId }
+        val hipIds = ghList.map { it.hipotesisId }.toSet()
+        return _uiState.value.hipotesisList.filter { it.id in hipIds }
     }
 
-    fun getHipotesisKode(hipotesisId: Long): String {
-        return _uiState.value.hipotesisList.find { it.id == hipotesisId }?.kode ?: "-"
+    /**
+     * Mendapatkan nama hipotesis pertama yang terkait (untuk kompatibilitas tampilan card)
+     */
+    fun getHipotesisNamaForGejala(gejalaId: Long): String {
+        val hipList = getHipotesisForGejala(gejalaId)
+        return if (hipList.isNotEmpty()) hipList.joinToString(", ") { it.nama } else "-"
+    }
+
+    fun getHipotesisKodeForGejala(gejalaId: Long): String {
+        val hipList = getHipotesisForGejala(gejalaId)
+        return if (hipList.isNotEmpty()) hipList.joinToString(", ") { it.kode } else "-"
     }
 
     // === ADD ===
     fun showAddDialog() {
         loadHipotesisList()
         _uiState.value = _uiState.value.copy(
-            showAddDialog = true, formKode = "", formNama = "", formHipotesisId = 0, formError = null
+            showAddDialog = true, formKode = "", formNama = "",
+            formSelectedHipotesisIds = emptySet(), formError = null
         )
     }
 
@@ -101,17 +134,46 @@ class GejalaViewModel : ViewModel() {
         val state = _uiState.value
         if (state.formKode.isBlank()) { _uiState.value = state.copy(formError = "Kode tidak boleh kosong"); return }
         if (state.formNama.isBlank()) { _uiState.value = state.copy(formError = "Nama gejala tidak boleh kosong"); return }
-        if (state.formHipotesisId == 0L) { _uiState.value = state.copy(formError = "Pilih hipotesis terlebih dahulu"); return }
+        if (state.formSelectedHipotesisIds.isEmpty()) { _uiState.value = state.copy(formError = "Pilih minimal 1 hipotesis"); return }
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, formError = null)
-            val request = GejalaRequest(kode = state.formKode.trim().uppercase(), nama = state.formNama.trim(), hipotesisId = state.formHipotesisId)
+
+            // 1. Insert gejala (tanpa hipotesis_id)
+            val request = GejalaRequest(
+                kode = state.formKode.trim().uppercase(),
+                nama = state.formNama.trim()
+            )
             repository.insert(request).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isSaving = false, showAddDialog = false, successMessage = "Gejala berhasil ditambahkan")
-                    loadGejala()
+                onSuccess = { newGejala ->
+                    // 2. Insert relasi gejala_hipotesis untuk setiap hipotesis yang dipilih
+                    var hasError = false
+                    for (hipId in state.formSelectedHipotesisIds) {
+                        val ghRequest = GejalaHipotesisRequest(
+                            gejalaId = newGejala.id,
+                            hipotesisId = hipId
+                        )
+                        ghRepository.insert(ghRequest).fold(
+                            onSuccess = { /* ok */ },
+                            onFailure = { error ->
+                                hasError = true
+                                _uiState.value = _uiState.value.copy(isSaving = false, formError = error.message)
+                            }
+                        )
+                        if (hasError) break
+                    }
+                    if (!hasError) {
+                        _uiState.value = _uiState.value.copy(
+                            isSaving = false, showAddDialog = false,
+                            successMessage = "Gejala berhasil ditambahkan"
+                        )
+                        loadGejalaHipotesis()
+                        loadGejala()
+                    }
                 },
-                onFailure = { error -> _uiState.value = _uiState.value.copy(isSaving = false, formError = error.message) }
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(isSaving = false, formError = error.message)
+                }
             )
         }
     }
@@ -119,9 +181,16 @@ class GejalaViewModel : ViewModel() {
     // === EDIT ===
     fun showEditDialog(gejala: Gejala) {
         loadHipotesisList()
+        // Load current hipotesis associations for this gejala
+        val currentHipIds = _uiState.value.gejalaHipotesisList
+            .filter { it.gejalaId == gejala.id }
+            .map { it.hipotesisId }
+            .toSet()
+
         _uiState.value = _uiState.value.copy(
             showEditDialog = true, selectedGejala = gejala,
-            formKode = gejala.kode, formNama = gejala.nama, formHipotesisId = gejala.hipotesisId, formError = null
+            formKode = gejala.kode, formNama = gejala.nama,
+            formSelectedHipotesisIds = currentHipIds, formError = null
         )
     }
 
@@ -134,17 +203,59 @@ class GejalaViewModel : ViewModel() {
         val gejala = state.selectedGejala ?: return
         if (state.formKode.isBlank()) { _uiState.value = state.copy(formError = "Kode tidak boleh kosong"); return }
         if (state.formNama.isBlank()) { _uiState.value = state.copy(formError = "Nama gejala tidak boleh kosong"); return }
-        if (state.formHipotesisId == 0L) { _uiState.value = state.copy(formError = "Pilih hipotesis terlebih dahulu"); return }
+        if (state.formSelectedHipotesisIds.isEmpty()) { _uiState.value = state.copy(formError = "Pilih minimal 1 hipotesis"); return }
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, formError = null)
-            val request = GejalaRequest(kode = state.formKode.trim().uppercase(), nama = state.formNama.trim(), hipotesisId = state.formHipotesisId)
+
+            // 1. Update gejala data
+            val request = GejalaRequest(
+                kode = state.formKode.trim().uppercase(),
+                nama = state.formNama.trim()
+            )
             repository.update(gejala.id, request).fold(
                 onSuccess = {
-                    _uiState.value = _uiState.value.copy(isSaving = false, showEditDialog = false, selectedGejala = null, successMessage = "Gejala berhasil diupdate")
-                    loadGejala()
+                    // 2. Sync gejala_hipotesis: hapus yang lama, insert yang baru
+                    val currentGhList = state.gejalaHipotesisList.filter { it.gejalaId == gejala.id }
+                    val currentHipIds = currentGhList.map { it.hipotesisId }.toSet()
+                    val newHipIds = state.formSelectedHipotesisIds
+
+                    // Hapus relasi yang tidak ada di form
+                    val toRemove = currentGhList.filter { it.hipotesisId !in newHipIds }
+                    for (gh in toRemove) {
+                        ghRepository.delete(gh.id)
+                    }
+
+                    // Tambah relasi baru yang belum ada
+                    val toAdd = newHipIds - currentHipIds
+                    var hasError = false
+                    for (hipId in toAdd) {
+                        val ghRequest = GejalaHipotesisRequest(
+                            gejalaId = gejala.id,
+                            hipotesisId = hipId
+                        )
+                        ghRepository.insert(ghRequest).fold(
+                            onSuccess = { /* ok */ },
+                            onFailure = { error ->
+                                hasError = true
+                                _uiState.value = _uiState.value.copy(isSaving = false, formError = error.message)
+                            }
+                        )
+                        if (hasError) break
+                    }
+
+                    if (!hasError) {
+                        _uiState.value = _uiState.value.copy(
+                            isSaving = false, showEditDialog = false, selectedGejala = null,
+                            successMessage = "Gejala berhasil diupdate"
+                        )
+                        loadGejalaHipotesis()
+                        loadGejala()
+                    }
                 },
-                onFailure = { error -> _uiState.value = _uiState.value.copy(isSaving = false, formError = error.message) }
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(isSaving = false, formError = error.message)
+                }
             )
         }
     }
@@ -162,13 +273,20 @@ class GejalaViewModel : ViewModel() {
         val gejala = _uiState.value.selectedGejala ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true)
+            // CASCADE akan menghapus gejala_hipotesis terkait secara otomatis
             repository.delete(gejala.id).fold(
                 onSuccess = {
-                    _uiState.value = _uiState.value.copy(isSaving = false, showDeleteDialog = false, selectedGejala = null, successMessage = "Gejala '${gejala.kode}' berhasil dihapus")
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false, showDeleteDialog = false, selectedGejala = null,
+                        successMessage = "Gejala '${gejala.kode}' berhasil dihapus"
+                    )
+                    loadGejalaHipotesis()
                     loadGejala()
                 },
                 onFailure = { error ->
-                    _uiState.value = _uiState.value.copy(isSaving = false, showDeleteDialog = false, errorMessage = error.message)
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false, showDeleteDialog = false, errorMessage = error.message
+                    )
                 }
             )
         }
@@ -177,7 +295,20 @@ class GejalaViewModel : ViewModel() {
     // === FORM FIELDS ===
     fun onFormKodeChange(value: String) { _uiState.value = _uiState.value.copy(formKode = value, formError = null) }
     fun onFormNamaChange(value: String) { _uiState.value = _uiState.value.copy(formNama = value, formError = null) }
-    fun onFormHipotesisIdChange(value: Long) { _uiState.value = _uiState.value.copy(formHipotesisId = value, formError = null) }
+
+    /**
+     * Toggle hipotesis selection (many-to-many)
+     */
+    fun toggleHipotesisSelection(hipotesisId: Long) {
+        val current = _uiState.value.formSelectedHipotesisIds.toMutableSet()
+        if (hipotesisId in current) {
+            current.remove(hipotesisId)
+        } else {
+            current.add(hipotesisId)
+        }
+        _uiState.value = _uiState.value.copy(formSelectedHipotesisIds = current, formError = null)
+    }
+
     fun clearSuccessMessage() { _uiState.value = _uiState.value.copy(successMessage = null) }
     fun clearErrorMessage() { _uiState.value = _uiState.value.copy(errorMessage = null) }
 }

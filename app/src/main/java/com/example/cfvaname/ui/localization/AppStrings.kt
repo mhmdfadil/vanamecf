@@ -183,7 +183,7 @@ sealed class AppStrings(val id: String, val en: String) {
     // ===================================================
     object Questionnaire : AppStrings("Kuesioner", "Questionnaire")
     object Questionnaire_Title : AppStrings("Kuesioner", "Questionnaire")
-    object DiseaseQuestionnaireVename : AppStrings("Diagnosa penyakit udang vaname", "Vename shrimp disease diagnosis")
+    object DiseaseQuestionnaireVename : AppStrings("Diagnosa penyakit udang vaname", "Vaname shrimp disease diagnosis")
     object Data : AppStrings("Data", "Data")
     object NoQuestionnaireData : AppStrings("Belum ada data kuesioner", "No questionnaire data")
     object LoadingData : AppStrings("Memuat data...", "Loading data...")
@@ -206,7 +206,7 @@ sealed class AppStrings(val id: String, val en: String) {
     object ConfidenceLevel : AppStrings("Keyakinan", "Confidence")
     object ChangeConfidence : AppStrings("Ubah", "Change")
     object DiagnosisReportTitle : AppStrings("LAPORAN DIAGNOSA SISTEM PAKAR", "EXPERT SYSTEM DIAGNOSIS REPORT")
-    object CertaintyFactorAnalysis : AppStrings("Hasil Analisis Certainty Factor - VENAME", "Certainty Factor Analysis Results - VENAME")
+    object CertaintyFactorAnalysis : AppStrings("Hasil Analisis Certainty Factor - VANAME", "Certainty Factor Analysis Results - VANAME")
     object DeleteQuestionnaire : AppStrings("Hapus Kuesioner?", "Delete Questionnaire?")
     object DeleteQuestionnaireConfirm : AppStrings("Hapus kuesioner \"%s\" beserta seluruh datanya?", "Delete questionnaire \"%s\" and all its data?")
     object ViewResults : AppStrings("Lihat Hasil", "View Results")
@@ -238,17 +238,17 @@ sealed class AppStrings(val id: String, val en: String) {
     // ===================================================
     // ABOUT
     // ===================================================
-    object AppName : AppStrings("Sistem Cerdas Vename", "Vename Smart System")
+    object AppName : AppStrings("Sistem Cerdas Vaname", "Vaname Smart System")
     object AboutApp : AppStrings("Tentang Aplikasi", "About Application")
     object AppVersion : AppStrings("Versi Aplikasi", "Application Version")
     object Developer : AppStrings("Pengembang", "Developer")
     object DeveloperTeam : AppStrings("Development Team 2026", "Development Team 2026")
     object AppDescription : AppStrings(
-        "Sistem Cerdas Vename adalah platform pengelolaan data dan monitoring yang dirancang untuk membantu organisasi dalam mengoptimalkan proses bisnis secara real-time dengan teknologi terkini.",
-        "Vename Smart System is a data management and monitoring platform designed to help organizations optimize business processes in real-time with the latest technology."
+        "Sistem Cerdas Vaname adalah platform pengelolaan data dan monitoring yang dirancang untuk membantu organisasi dalam mengoptimalkan proses bisnis secara real-time dengan teknologi terkini.",
+        "Vaname Smart System is a data management and monitoring platform designed to help organizations optimize business processes in real-time with the latest technology."
     )
     object Technology : AppStrings("Teknologi", "Technology")
-    object Copyright : AppStrings("© 2026 Sistem Cerdas Vename", "© 2026 Vename Smart System")
+    object Copyright : AppStrings("© 2026 Sistem Cerdas Vaname", "© 2026 Vaname Smart System")
     object TermsAndConditions : AppStrings("Syarat dan Ketentuan", "Terms and Conditions")
     object PrivacyPolicy : AppStrings("Kebijakan Privasi", "Privacy Policy")
     

@@ -76,7 +76,7 @@ fun KuesionerListScreen(padding: PaddingValues, vm: KuesionerViewModel, snackbar
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Header
             Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Brush.horizontalGradient(listOf(VenamePrimary, VenameSecondary))).padding(16.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -200,13 +200,17 @@ fun KuesionerSummaryCard(no: Int, summary: KuesionerSummary, onLihatHasil: () ->
 }
 
 // ======================================================================
-// 2. CREATE FORM SCREEN
+// 2. CREATE FORM SCREEN - Now groups gejala by hipotesis via gejala_hipotesis
 // ======================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KuesionerCreateForm(padding: PaddingValues, vm: KuesionerViewModel) {
     val uiState by vm.uiState.collectAsState()
     val scrollState = rememberScrollState()
+
+    // Build grouped data: hipotesis -> list of (GejalaHipotesis, Gejala)
+    val gejalaMap = uiState.gejalaList.associateBy { it.id }
+    val grouped = uiState.gejalaHipotesisList.groupBy { it.hipotesisId }
 
     Column(Modifier.fillMaxSize().padding(padding).verticalScroll(scrollState)) {
         // Back + title
@@ -233,7 +237,7 @@ fun KuesionerCreateForm(padding: PaddingValues, vm: KuesionerViewModel) {
 
         Spacer(Modifier.height(16.dp))
 
-        // Gejala grouped by hipotesis
+        // Gejala grouped by hipotesis (via gejala_hipotesis pivot)
         Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
             Column(Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -244,32 +248,37 @@ fun KuesionerCreateForm(padding: PaddingValues, vm: KuesionerViewModel) {
                 Text(stringResource(AppStrings.SelectSymptomInstructions), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
 
-                val grouped = uiState.gejalaList.groupBy { it.hipotesisId }
-                grouped.forEach { (hipId, gejalas) ->
+                val hipotesisKeys = grouped.keys.toList()
+                hipotesisKeys.forEach { hipId ->
+                    val ghItems = grouped[hipId] ?: emptyList()
                     val hip = uiState.hipotesisList.find { it.id == hipId }
                     if (hip != null) {
                         Text("${hip.kode} - ${hip.nama}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = VenamePrimaryDark, modifier = Modifier.padding(vertical = 12.dp))
-                        
+
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            gejalas.forEachIndexed { index, gejala ->
-                                GejalaSelectItem(
-                                    gejala = gejala,
-                                    nilaiCfList = uiState.nilaiCfList,
-                                    selectedCfId = uiState.selectedGejalaCf[gejala.id],
-                                    enabled = !uiState.isSaving,
-                                    onSelect = { cfId -> vm.toggleGejala(gejala.id, cfId) }
-                                )
-                                if (index < gejalas.size - 1) {
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(vertical = 8.dp),
-                                        thickness = 1.dp,
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(0.5f)
+                            ghItems.forEachIndexed { index, gh ->
+                                val gejala = gejalaMap[gh.gejalaId]
+                                if (gejala != null) {
+                                    GejalaSelectItem(
+                                        gejala = gejala,
+                                        gejalaHipotesisId = gh.id,
+                                        nilaiCfList = uiState.nilaiCfList,
+                                        selectedCfId = uiState.selectedGejalaCf[gh.id],
+                                        enabled = !uiState.isSaving,
+                                        onSelect = { cfId -> vm.toggleGejala(gh.id, cfId) }
                                     )
+                                    if (index < ghItems.size - 1) {
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(vertical = 8.dp),
+                                            thickness = 1.dp,
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(0.5f)
+                                        )
+                                    }
                                 }
                             }
                         }
-                        
-                        if (hipId != grouped.keys.last()) {
+
+                        if (hipId != hipotesisKeys.last()) {
                             HorizontalDivider(
                                 Modifier.padding(vertical = 12.dp),
                                 color = MaterialTheme.colorScheme.outlineVariant.copy(0.5f)
@@ -312,9 +321,19 @@ fun KuesionerCreateForm(padding: PaddingValues, vm: KuesionerViewModel) {
     }
 }
 
+/**
+ * Item pemilihan gejala - sekarang menerima gejalaHipotesisId sebagai key
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GejalaSelectItem(gejala: Gejala, nilaiCfList: List<NilaiCf>, selectedCfId: Long?, enabled: Boolean, onSelect: (Long) -> Unit) {
+fun GejalaSelectItem(
+    gejala: Gejala,
+    gejalaHipotesisId: Long,
+    nilaiCfList: List<NilaiCf>,
+    selectedCfId: Long?,
+    enabled: Boolean,
+    onSelect: (Long) -> Unit
+) {
     val isSelected = selectedCfId != null && selectedCfId != 0L
     var dropdownExpanded by remember { mutableStateOf(false) }
     val selectedCf = nilaiCfList.find { it.id == selectedCfId }
@@ -331,107 +350,36 @@ fun GejalaSelectItem(gejala: Gejala, nilaiCfList: List<NilaiCf>, selectedCfId: L
         Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Surface(
-            shape = RoundedCornerShape(6.dp),
-            color = VenamePrimary.copy(0.12f)
-        ) {
-            Text(
-                gejala.kode,
-                color = VenamePrimary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-            )
+        Surface(shape = RoundedCornerShape(6.dp), color = VenamePrimary.copy(0.12f)) {
+            Text(gejala.kode, color = VenamePrimary, fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
         }
+        Text(gejala.nama, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 18.sp, modifier = Modifier.fillMaxWidth())
 
-        Text(
-            gejala.nama,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface,
-            lineHeight = 18.sp,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        ExposedDropdownMenuBox(
-            expanded = dropdownExpanded,
-            onExpandedChange = { dropdownExpanded = it && enabled },
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        ExposedDropdownMenuBox(expanded = dropdownExpanded, onExpandedChange = { dropdownExpanded = it && enabled }, modifier = Modifier.fillMaxWidth()) {
             Surface(
                 shape = RoundedCornerShape(8.dp),
                 color = if (selectedCf != null) cfColor.copy(0.12f) else MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
                 onClick = { if (enabled) dropdownExpanded = true }
             ) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                         if (selectedCf != null) {
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = cfColor.copy(0.2f)
-                            ) {
-                                Text(
-                                    String.format("%.2f", selectedCf.nilai),
-                                    color = cfColor,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
+                            Surface(shape = RoundedCornerShape(4.dp), color = cfColor.copy(0.2f)) {
+                                Text(String.format("%.2f", selectedCf.nilai), color = cfColor, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                             }
                             Spacer(Modifier.width(8.dp))
-                            Text(
-                                selectedCf.keterangan,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 13.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
+                            Text(selectedCf.keterangan, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                         } else {
-                            Text(
-                                stringResource(AppStrings.NotSet),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp
-                            )
+                            Text(stringResource(AppStrings.NotSet), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                         }
                     }
-                    
-                    Icon(
-                        Icons.Filled.ArrowDropDown,
-                        null,
-                        tint = if (selectedCf != null) cfColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Icon(Icons.Filled.ArrowDropDown, null, tint = if (selectedCf != null) cfColor else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                 }
             }
-
-            ExposedDropdownMenu(
-                expanded = dropdownExpanded,
-                onDismissRequest = { dropdownExpanded = false }
-            ) {
+            ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
                 if (nilaiCfList.isEmpty()) {
-                    DropdownMenuItem(
-                        text = { 
-                            Text(
-                                stringResource(AppStrings.NoCfValueAvailable), 
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp
-                            ) 
-                        },
-                        onClick = { dropdownExpanded = false }
-                    )
+                    DropdownMenuItem(text = { Text(stringResource(AppStrings.NoCfValueAvailable), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) }, onClick = { dropdownExpanded = false })
                 } else {
                     nilaiCfList.forEach { cf ->
                         val isSel = cf.id == selectedCfId
@@ -441,50 +389,18 @@ fun GejalaSelectItem(gejala: Gejala, nilaiCfList: List<NilaiCf>, selectedCfId: L
                             cf.nilai <= 0.75 -> VenameAccent
                             else -> StatusSuccess
                         }
-                        
                         DropdownMenuItem(
                             text = {
-                                Row(
-                                    modifier = Modifier.padding(vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp), 
-                                        color = itemCfColor.copy(0.15f)
-                                    ) {
-                                        Text(
-                                            String.format("%.2f", cf.nilai),
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = itemCfColor,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                        )
+                                Row(modifier = Modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(shape = RoundedCornerShape(4.dp), color = itemCfColor.copy(0.15f)) {
+                                        Text(String.format("%.2f", cf.nilai), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = itemCfColor, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                                     }
                                     Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        cf.keterangan,
-                                        fontSize = 13.sp,
-                                        fontWeight = if (isSel) FontWeight.SemiBold else FontWeight.Normal,
-                                        color = if (isSel) VenamePrimary else MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
+                                    Text(cf.keterangan, fontSize = 13.sp, fontWeight = if (isSel) FontWeight.SemiBold else FontWeight.Normal, color = if (isSel) VenamePrimary else MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                             },
-                            onClick = {
-                                onSelect(cf.id)
-                                dropdownExpanded = false
-                            },
-                            trailingIcon = {
-                                if (isSel) {
-                                    Icon(
-                                        Icons.Filled.Check, 
-                                        null, 
-                                        tint = VenamePrimary, 
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
+                            onClick = { onSelect(cf.id); dropdownExpanded = false },
+                            trailingIcon = { if (isSel) Icon(Icons.Filled.Check, null, tint = VenamePrimary, modifier = Modifier.size(18.dp)) }
                         )
                     }
                 }
@@ -494,7 +410,7 @@ fun GejalaSelectItem(gejala: Gejala, nilaiCfList: List<NilaiCf>, selectedCfId: L
 }
 
 // ======================================================================
-// 3. HASIL SCREEN (Hasil Perhitungan CF)
+// 3. HASIL SCREEN - Updated to use gejala_hipotesis mapping
 // ======================================================================
 @Composable
 fun KuesionerHasilScreen(padding: PaddingValues, vm: KuesionerViewModel) {
@@ -507,7 +423,7 @@ fun KuesionerHasilScreen(padding: PaddingValues, vm: KuesionerViewModel) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { vm.hideHasil() }) { Icon(Icons.Filled.ArrowBack, stringResource(AppStrings.Back)) }
             Text(stringResource(AppStrings.DiagnosisResults), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
-            TextButton(onClick = { exportPdf(context, k, uiState.hasilResults, uiState.hasilKuesionerDataList, uiState.allGejalaMap, uiState.allNilaiCfMap) }) {
+            TextButton(onClick = { exportPdf(context, k, uiState.hasilResults, uiState.hasilKuesionerDataList, uiState.allGejalaMap, uiState.allNilaiCfMap, uiState.allGejalaHipotesisMap) }) {
                 Icon(Icons.Filled.PictureAsPdf, null, tint = StatusError, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(stringResource(AppStrings.ExportPdf), color = StatusError, fontSize = 13.sp)
             }
         }
@@ -530,12 +446,14 @@ fun KuesionerHasilScreen(padding: PaddingValues, vm: KuesionerViewModel) {
         }
         Spacer(Modifier.height(12.dp))
 
+        // Gejala yang dipilih - resolve via gejala_hipotesis
         Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
             Column(Modifier.padding(16.dp)) {
                 Text(stringResource(AppStrings.SelectedSymptoms), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = VenamePrimary)
                 Spacer(Modifier.height(8.dp))
                 uiState.hasilKuesionerDataList.forEach { data ->
-                    val gejala = uiState.allGejalaMap[data.gejalaId]
+                    val gh = uiState.allGejalaHipotesisMap[data.gejalaHipotesisId]
+                    val gejala = if (gh != null) uiState.allGejalaMap[gh.gejalaId] else null
                     val nilaiCf = uiState.allNilaiCfMap[data.cfValue]
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Surface(shape = RoundedCornerShape(4.dp), color = VenamePrimary.copy(0.1f)) { Text(gejala?.kode ?: "-", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VenamePrimary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) }
@@ -560,7 +478,6 @@ fun KuesionerHasilScreen(padding: PaddingValues, vm: KuesionerViewModel) {
                         Surface(shape = RoundedCornerShape(8.dp), color = VenamePrimary.copy(0.1f)) { Text("${result.percentage}%", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = VenamePrimary, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) }
                     }
                     Spacer(Modifier.height(8.dp))
-
                     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
                         Column(Modifier.padding(8.dp)) {
                             Row(Modifier.fillMaxWidth()) {
@@ -571,10 +488,9 @@ fun KuesionerHasilScreen(padding: PaddingValues, vm: KuesionerViewModel) {
                                 Text(stringResource(AppStrings.CfCombineTableHeader), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(0.8f), textAlign = TextAlign.Center)
                             }
                             HorizontalDivider(Modifier.padding(vertical = 4.dp))
-
                             result.steps.forEach { step ->
                                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                                    Text("${step.gejalaKode}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1.4f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(step.gejalaKode, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1.4f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Text(String.format("%.2f", step.cfPakar), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(0.7f), textAlign = TextAlign.Center)
                                     Text(String.format("%.2f", step.cfUser), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(0.7f), textAlign = TextAlign.Center)
                                     Text(String.format("%.4f", step.cfGejala), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(0.7f), textAlign = TextAlign.Center)
@@ -588,7 +504,6 @@ fun KuesionerHasilScreen(padding: PaddingValues, vm: KuesionerViewModel) {
                             }
                         }
                     }
-
                     Spacer(Modifier.height(8.dp))
                     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(6.dp), color = VenamePrimaryLight.copy(0.3f)) {
                         Column(Modifier.padding(8.dp)) {
@@ -709,9 +624,6 @@ private class PdfBuilder(private val context: Context) {
     }
 
     // ---- Text wrapping ----
-    /**
-     * Wraps text to fit within maxWidth, returning list of lines.
-     */
     fun wrapText(text: String, textSize: Float, maxWidth: Float, bold: Boolean = false): List<String> {
         paint.textSize = textSize
         paint.isFakeBoldText = bold
@@ -725,7 +637,6 @@ private class PdfBuilder(private val context: Context) {
                 currentLine = testLine
             } else {
                 if (currentLine.isNotEmpty()) lines.add(currentLine)
-                // If single word exceeds width, force-break it
                 if (paint.measureText(word) > maxWidth) {
                     var remaining = word
                     while (remaining.isNotEmpty()) {
@@ -745,24 +656,15 @@ private class PdfBuilder(private val context: Context) {
         return lines
     }
 
-    /**
-     * Draws wrapped text and advances y. Returns total height used.
-     */
     fun drawWrappedText(
-        text: String,
-        x: Float,
-        textSize: Float,
-        maxWidth: Float,
-        color: Int = Colors.textDark,
-        bold: Boolean = false,
-        lineSpacing: Float = 1.35f
+        text: String, x: Float, textSize: Float, maxWidth: Float,
+        color: Int = Colors.textDark, bold: Boolean = false, lineSpacing: Float = 1.35f
     ): Float {
         val lines = wrapText(text, textSize, maxWidth, bold)
         val lineHeight = textSize * lineSpacing
         paint.textSize = textSize
         paint.isFakeBoldText = bold
         paint.color = color
-
         var totalHeight = 0f
         for (line in lines) {
             ensureSpace(lineHeight + 2f)
@@ -788,7 +690,6 @@ private class PdfBuilder(private val context: Context) {
     }
 
     private fun drawPageHeaderBar() {
-        // Thin accent line at top of continuation pages
         fillPaint.color = Colors.primary
         canvas.drawRect(marginLeft, marginTop - 8f, pageWidth - marginRight, marginTop - 5f, fillPaint)
         y = marginTop + 8f
@@ -798,23 +699,17 @@ private class PdfBuilder(private val context: Context) {
         paint.textSize = 7.5f
         paint.isFakeBoldText = false
         paint.color = Colors.textMuted
-
         val footerY = pageHeight - 25f
-        // Left: branding
         canvas.drawText("Sistem Cerdas Vename", marginLeft, footerY, paint)
-        // Right: page number
         val pageText = "Halaman $pageNum"
         val pageTextWidth = paint.measureText(pageText)
         canvas.drawText(pageText, pageWidth - marginRight - pageTextWidth, footerY, paint)
-
-        // Thin line above footer
         strokePaint.color = Colors.border
         strokePaint.strokeWidth = 0.5f
         canvas.drawLine(marginLeft, footerY - 10f, pageWidth - marginRight, footerY - 10f, strokePaint)
     }
 
     // ---- Drawing Helpers ----
-
     fun drawRoundedRect(left: Float, top: Float, right: Float, bottom: Float, radius: Float, color: Int) {
         fillPaint.color = color
         val rectF = android.graphics.RectF(left, top, right, bottom)
@@ -835,141 +730,82 @@ private class PdfBuilder(private val context: Context) {
         y += 6f
     }
 
-    fun space(amount: Float) {
-        y += amount
-    }
+    fun space(amount: Float) { y += amount }
 
     // ---- Section Components ----
-
     fun drawDocumentHeader(title: String, subtitle: String) {
-        // Blue header banner with rounded corners
         val bannerHeight = 70f
         drawRoundedRect(marginLeft, y, pageWidth - marginRight, y + bannerHeight, 8f, Colors.headerBg)
-
-        // Title
-        paint.textSize = 18f
-        paint.isFakeBoldText = true
-        paint.color = Colors.headerText
+        paint.textSize = 18f; paint.isFakeBoldText = true; paint.color = Colors.headerText
         canvas.drawText(title, marginLeft + 18f, y + 28f, paint)
-
-        // Subtitle
-        paint.textSize = 10f
-        paint.isFakeBoldText = false
-        paint.color = android.graphics.Color.argb(200, 255, 255, 255)
+        paint.textSize = 10f; paint.isFakeBoldText = false; paint.color = android.graphics.Color.argb(200, 255, 255, 255)
         canvas.drawText(subtitle, marginLeft + 18f, y + 45f, paint)
-
-        // Date on right
         val dateStr = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID")).format(Date())
         paint.textSize = 9f
         val dateWidth = paint.measureText(dateStr)
         canvas.drawText(dateStr, pageWidth - marginRight - dateWidth - 18f, y + 45f, paint)
-
         y += bannerHeight + 16f
     }
 
     fun drawSectionHeader(title: String, iconChar: String? = null) {
         ensureSpace(30f)
-
-        // Accent bar
         fillPaint.color = Colors.primary
         canvas.drawRect(marginLeft, y, marginLeft + 4f, y + 16f, fillPaint)
-
-        // Title
-        paint.textSize = 12f
-        paint.isFakeBoldText = true
-        paint.color = Colors.primaryDark
+        paint.textSize = 12f; paint.isFakeBoldText = true; paint.color = Colors.primaryDark
         canvas.drawText(title, marginLeft + 12f, y + 12f, paint)
-
         y += 24f
     }
 
     fun drawInfoCard(data: List<Pair<String, String>>) {
         ensureSpace(20f + data.size * 20f)
-
         val cardTop = y - 4f
         val rowHeight = 22f
         val cardHeight = data.size * rowHeight + 16f
         val labelWidth = 130f
-
-        // Card background
         drawRoundedRect(marginLeft, cardTop, pageWidth - marginRight, cardTop + cardHeight, 6f, Colors.bgCard)
         drawRoundedRectStroke(marginLeft, cardTop, pageWidth - marginRight, cardTop + cardHeight, 6f, Colors.border)
-
         y = cardTop + 12f
-
         data.forEachIndexed { index, (label, value) ->
-            // Alternating row bg
             if (index % 2 == 0) {
                 fillPaint.color = Colors.bgLight
                 canvas.drawRect(marginLeft + 2f, y - 10f, pageWidth - marginRight - 2f, y + rowHeight - 10f, fillPaint)
             }
-
-            // Label
-            paint.textSize = 9.5f
-            paint.isFakeBoldText = false
-            paint.color = Colors.textLight
+            paint.textSize = 9.5f; paint.isFakeBoldText = false; paint.color = Colors.textLight
             canvas.drawText(label, marginLeft + 14f, y, paint)
-
-            // Value (with wrapping support)
             val valueMaxWidth = contentWidth - labelWidth - 30f
             val lines = wrapText(value, 9.5f, valueMaxWidth, bold = true)
-            paint.textSize = 9.5f
-            paint.isFakeBoldText = true
-            paint.color = Colors.textDark
+            paint.textSize = 9.5f; paint.isFakeBoldText = true; paint.color = Colors.textDark
             canvas.drawText(lines.firstOrNull() ?: "-", marginLeft + labelWidth + 14f, y, paint)
-
             y += rowHeight
         }
-
         y += 6f
     }
 
-    /**
-     * Column alignment enum for table cells.
-     */
     enum class Align { LEFT, CENTER, RIGHT }
 
-    /**
-     * Draws a full-width table with proper text wrapping in each cell.
-     * columns: list of Triple(header, relative weight, alignment)
-     * rows: list of row data (list of cell strings)
-     */
     fun drawTable(
-        columns: List<Pair<String, Float>>,
-        rows: List<List<String>>,
-        headerBgColor: Int = Colors.tableHeaderBg,
-        headerTextColor: Int = Colors.primaryDark,
-        fontSize: Float = 8.5f,
-        headerFontSize: Float = 8.5f,
-        rowPaddingV: Float = 6f,
-        cellPaddingH: Float = 6f,
-        columnAligns: List<Align>? = null,
-        lastColumnHighlight: Boolean = false
+        columns: List<Pair<String, Float>>, rows: List<List<String>>,
+        headerBgColor: Int = Colors.tableHeaderBg, headerTextColor: Int = Colors.primaryDark,
+        fontSize: Float = 8.5f, headerFontSize: Float = 8.5f,
+        rowPaddingV: Float = 6f, cellPaddingH: Float = 6f,
+        columnAligns: List<Align>? = null, lastColumnHighlight: Boolean = false
     ) {
         val totalWeight = columns.sumOf { it.second.toDouble() }.toFloat()
         val colWidths = columns.map { (it.second / totalWeight) * contentWidth }
         val colXs = mutableListOf<Float>()
         var cx = marginLeft
         colWidths.forEach { w -> colXs.add(cx); cx += w }
-
-        // Default: first column LEFT, rest CENTER
         val aligns = columnAligns ?: columns.mapIndexed { i, _ -> if (i == 0) Align.LEFT else Align.CENTER }
-
         val tableLeft = marginLeft
         val tableRight = pageWidth - marginRight
 
-        // ---- Outer border ----
         drawRoundedRectStroke(tableLeft, y, tableRight, y + 1f, 4f, Colors.border, 0.5f)
 
-        // ---- Draw header ----
         ensureSpace(28f)
         val headerTop = y
         val headerHeight = 22f
         drawRoundedRect(tableLeft, headerTop, tableRight, headerTop + headerHeight, 4f, headerBgColor)
-
-        paint.textSize = headerFontSize
-        paint.isFakeBoldText = true
-        paint.color = headerTextColor
+        paint.textSize = headerFontSize; paint.isFakeBoldText = true; paint.color = headerTextColor
 
         columns.forEachIndexed { i, (header, _) ->
             val maxW = colWidths[i] - cellPaddingH * 2
@@ -982,10 +818,8 @@ private class PdfBuilder(private val context: Context) {
             }
             canvas.drawText(truncated, drawX, headerTop + 14.5f, paint)
         }
-
         y = headerTop + headerHeight + 1f
 
-        // ---- Draw rows ----
         rows.forEachIndexed { rowIdx, row ->
             val cellLines = row.mapIndexed { colIdx, cellText ->
                 val maxW = colWidths.getOrElse(colIdx) { colWidths.last() } - cellPaddingH * 2
@@ -994,24 +828,18 @@ private class PdfBuilder(private val context: Context) {
             val maxLines = cellLines.maxOf { it.size }
             val lineHeight = fontSize * 1.35f
             val rowHeight = maxLines * lineHeight + rowPaddingV * 2
-
             ensureSpace(rowHeight + 2f)
 
-            // Alternating row background
             if (rowIdx % 2 == 0) {
                 fillPaint.color = Colors.tableRowAlt
                 canvas.drawRect(tableLeft, y, tableRight, y + rowHeight, fillPaint)
             }
 
-            // Draw each cell
             cellLines.forEachIndexed { colIdx, lines ->
                 val colAlign = aligns.getOrElse(colIdx) { Align.LEFT }
                 val isLastCol = colIdx == columns.size - 1 && lastColumnHighlight
-
-                paint.textSize = fontSize
-                paint.isFakeBoldText = isLastCol
+                paint.textSize = fontSize; paint.isFakeBoldText = isLastCol
                 paint.color = if (isLastCol) Colors.primary else Colors.textDark
-
                 var cellY = y + rowPaddingV + fontSize
                 lines.forEach { line ->
                     val textW = paint.measureText(line)
@@ -1025,166 +853,84 @@ private class PdfBuilder(private val context: Context) {
                 }
             }
 
-            // Bottom border
-            strokePaint.color = Colors.border
-            strokePaint.strokeWidth = 0.3f
+            strokePaint.color = Colors.border; strokePaint.strokeWidth = 0.3f
             canvas.drawLine(tableLeft, y + rowHeight, tableRight, y + rowHeight, strokePaint)
-
             y += rowHeight
         }
-
         y += 4f
     }
 
-    /**
-     * Draws a summary row below a table (e.g., "CF Combine Akhir: 0.1234 (56%)")
-     */
     fun drawTableFooterRow(label: String, value: String) {
         ensureSpace(24f)
-        val tableLeft = marginLeft
-        val tableRight = pageWidth - marginRight
-
-        // Background
+        val tableLeft = marginLeft; val tableRight = pageWidth - marginRight
         drawRoundedRect(tableLeft, y - 2f, tableRight, y + 18f, 4f, Colors.primaryLight)
-
-        // Label (right-aligned to ~60% width)
-        paint.textSize = 9.5f
-        paint.isFakeBoldText = true
-        paint.color = Colors.textDark
+        paint.textSize = 9.5f; paint.isFakeBoldText = true; paint.color = Colors.textDark
         val labelW = paint.measureText(label)
         val labelX = marginLeft + contentWidth * 0.55f - labelW
         canvas.drawText(label, labelX, y + 11f, paint)
-
-        // Value (after label)
-        paint.color = Colors.primary
-        paint.isFakeBoldText = true
+        paint.color = Colors.primary; paint.isFakeBoldText = true
         canvas.drawText(value, marginLeft + contentWidth * 0.58f, y + 11f, paint)
-
         y += 24f
     }
 
     fun drawHighlightBox(
-        title: String,
-        content: String,
-        bgColor: Int,
-        borderColor: Int,
-        titleColor: Int,
-        contentColor: Int = Colors.textDark
+        title: String, content: String, bgColor: Int, borderColor: Int,
+        titleColor: Int, contentColor: Int = Colors.textDark
     ) {
         val titleLines = wrapText(title, 11f, contentWidth - 30f, bold = true)
         val contentLines = wrapText(content, 9.5f, contentWidth - 30f)
         val totalHeight = titleLines.size * 15f + contentLines.size * 13f + 30f
-
         ensureSpace(totalHeight)
-
         val boxTop = y - 4f
         drawRoundedRect(marginLeft, boxTop, pageWidth - marginRight, boxTop + totalHeight, 6f, bgColor)
         drawRoundedRectStroke(marginLeft, boxTop, pageWidth - marginRight, boxTop + totalHeight, 6f, borderColor)
-
-        // Accent strip on left
         fillPaint.color = borderColor
         canvas.drawRect(marginLeft, boxTop + 3f, marginLeft + 4f, boxTop + totalHeight - 3f, fillPaint)
-
         y = boxTop + 16f
-
-        // Title
-        paint.textSize = 11f
-        paint.isFakeBoldText = true
-        paint.color = titleColor
-        titleLines.forEach { line ->
-            canvas.drawText(line, marginLeft + 16f, y, paint)
-            y += 15f
-        }
-
+        paint.textSize = 11f; paint.isFakeBoldText = true; paint.color = titleColor
+        titleLines.forEach { line -> canvas.drawText(line, marginLeft + 16f, y, paint); y += 15f }
         y += 2f
-
-        // Content
-        paint.textSize = 9.5f
-        paint.isFakeBoldText = false
-        paint.color = contentColor
-        contentLines.forEach { line ->
-            canvas.drawText(line, marginLeft + 16f, y, paint)
-            y += 13f
-        }
-
+        paint.textSize = 9.5f; paint.isFakeBoldText = false; paint.color = contentColor
+        contentLines.forEach { line -> canvas.drawText(line, marginLeft + 16f, y, paint); y += 13f }
         y += 8f
     }
 
     fun drawRankingItem(rank: Int, label: String, percentage: Double) {
         ensureSpace(40f)
-
-        val itemTop = y
-        val itemHeight = 36f
-        val pctInt = percentage.toInt()
-
-        val rankColor = when {
-            pctInt > 50 -> Colors.success
-            pctInt > 30 -> Colors.warning
-            else -> Colors.textLight
-        }
-        val rankBg = when {
-            pctInt > 50 -> Colors.successBg
-            pctInt > 30 -> Colors.warningBg
-            else -> Colors.bgLight
-        }
-
-        // Background card
+        val itemTop = y; val itemHeight = 36f; val pctInt = percentage.toInt()
+        val rankColor = when { pctInt > 50 -> Colors.success; pctInt > 30 -> Colors.warning; else -> Colors.textLight }
+        val rankBg = when { pctInt > 50 -> Colors.successBg; pctInt > 30 -> Colors.warningBg; else -> Colors.bgLight }
         drawRoundedRect(marginLeft, itemTop, pageWidth - marginRight, itemTop + itemHeight, 6f, rankBg)
         drawRoundedRectStroke(marginLeft, itemTop, pageWidth - marginRight, itemTop + itemHeight, 6f, Colors.border, 0.4f)
 
-        // Rank circle (left)
-        val circleR = 11f
-        val circleX = marginLeft + 20f
-        val circleY = itemTop + itemHeight / 2f
+        val circleR = 11f; val circleX = marginLeft + 20f; val circleY = itemTop + itemHeight / 2f
         fillPaint.color = rankColor
         canvas.drawCircle(circleX, circleY, circleR, fillPaint)
-        paint.textSize = 9f
-        paint.isFakeBoldText = true
-        paint.color = Colors.white
-        val rankText = "#$rank"
-        val rankTextWidth = paint.measureText(rankText)
+        paint.textSize = 9f; paint.isFakeBoldText = true; paint.color = Colors.white
+        val rankText = "#$rank"; val rankTextWidth = paint.measureText(rankText)
         canvas.drawText(rankText, circleX - rankTextWidth / 2f, circleY + 3.5f, paint)
 
-        // Label text (after circle, ~38% of content width)
-        val labelStartX = marginLeft + 42f
-        val labelMaxW = contentWidth * 0.38f
+        val labelStartX = marginLeft + 42f; val labelMaxW = contentWidth * 0.38f
         val labelLines = wrapText(label, 9.5f, labelMaxW, bold = false)
-        paint.textSize = 9.5f
-        paint.isFakeBoldText = false
-        paint.color = Colors.textDark
+        paint.textSize = 9.5f; paint.isFakeBoldText = false; paint.color = Colors.textDark
         val labelBaseY = itemTop + if (labelLines.size == 1) (itemHeight / 2f + 3.5f) else (itemHeight / 2f - 3f)
-        labelLines.take(2).forEachIndexed { i, line ->
-            canvas.drawText(line, labelStartX, labelBaseY + i * 13f, paint)
-        }
+        labelLines.take(2).forEachIndexed { i, line -> canvas.drawText(line, labelStartX, labelBaseY + i * 13f, paint) }
 
-        // Progress bar (middle-right area)
-        val barStartX = marginLeft + contentWidth * 0.48f
-        val barMaxWidth = contentWidth * 0.34f
-        val barHeight = 8f
-        val barY = itemTop + itemHeight / 2f - barHeight / 2f
+        val barStartX = marginLeft + contentWidth * 0.48f; val barMaxWidth = contentWidth * 0.34f
+        val barHeight = 8f; val barY = itemTop + itemHeight / 2f - barHeight / 2f
         val barFillWidth = ((pctInt / 100f) * barMaxWidth).coerceAtLeast(0f)
-
-        // Track
         drawRoundedRect(barStartX, barY, barStartX + barMaxWidth, barY + barHeight, 4f, android.graphics.Color.argb(30, 0, 0, 0))
-        // Fill
-        if (barFillWidth > 2f) {
-            drawRoundedRect(barStartX, barY, barStartX + barFillWidth, barY + barHeight, 4f, rankColor)
-        }
+        if (barFillWidth > 2f) drawRoundedRect(barStartX, barY, barStartX + barFillWidth, barY + barHeight, 4f, rankColor)
 
-        // Percentage text (right-aligned)
         val pctText = "$pctInt%"
-        paint.textSize = 12f
-        paint.isFakeBoldText = true
-        paint.color = rankColor
+        paint.textSize = 12f; paint.isFakeBoldText = true; paint.color = rankColor
         val pctWidth = paint.measureText(pctText)
         canvas.drawText(pctText, pageWidth - marginRight - pctWidth - 12f, circleY + 4.5f, paint)
-
         y = itemTop + itemHeight + 6f
     }
 
     private fun truncateText(text: String, textSize: Float, maxWidth: Float, bold: Boolean = false): String {
-        paint.textSize = textSize
-        paint.isFakeBoldText = bold
+        paint.textSize = textSize; paint.isFakeBoldText = bold
         if (paint.measureText(text) <= maxWidth) return text
         var end = text.length
         while (end > 0 && paint.measureText(text.substring(0, end) + "…") > maxWidth) end--
@@ -1203,18 +949,17 @@ fun exportPdf(
     results: List<HipotesisResult>,
     dataList: List<KuesionerData>,
     gejalaMap: Map<Long, Gejala>,
-    nilaiCfMap: Map<Long, NilaiCf>
+    nilaiCfMap: Map<Long, NilaiCf>,
+    gejalaHipotesisMap: Map<Long, GejalaHipotesis>
 ) {
     try {
         val builder = PdfBuilder(context)
 
-        // ===== DOCUMENT HEADER =====
         builder.drawDocumentHeader(
             "Laporan Hasil Diagnosa",
             "Sistem Cerdas Vename — Platform Monitoring Udang Vaname"
         )
 
-        // ===== INFORMASI PETAMBAK =====
         builder.drawSectionHeader("INFORMASI PETAMBAK")
         builder.drawInfoCard(
             listOf(
@@ -1226,25 +971,19 @@ fun exportPdf(
         )
         builder.space(8f)
 
-        // ===== GEJALA YANG DIPILIH =====
         builder.drawSectionHeader("GEJALA YANG DIPILIH")
 
         val gejalaColumns = listOf(
-            "No." to 0.5f,
-            "Kode" to 0.8f,
-            "Gejala" to 3.2f,
-            "Tingkat Keyakinan" to 2.0f,
-            "Nilai CF" to 0.8f
+            "No." to 0.5f, "Kode" to 0.8f, "Gejala" to 3.2f,
+            "Tingkat Keyakinan" to 2.0f, "Nilai CF" to 0.8f
         )
         val gejalaAligns = listOf(
-            PdfBuilder.Align.CENTER,
-            PdfBuilder.Align.CENTER,
-            PdfBuilder.Align.LEFT,
-            PdfBuilder.Align.LEFT,
-            PdfBuilder.Align.CENTER
+            PdfBuilder.Align.CENTER, PdfBuilder.Align.CENTER, PdfBuilder.Align.LEFT,
+            PdfBuilder.Align.LEFT, PdfBuilder.Align.CENTER
         )
         val gejalaRows = dataList.mapIndexed { index, data ->
-            val g = gejalaMap[data.gejalaId]
+            val gh = gejalaHipotesisMap[data.gejalaHipotesisId]
+            val g = if (gh != null) gejalaMap[gh.gejalaId] else null
             val cf = nilaiCfMap[data.cfValue]
             listOf(
                 "${index + 1}",
@@ -1257,224 +996,102 @@ fun exportPdf(
         builder.drawTable(gejalaColumns, gejalaRows, columnAligns = gejalaAligns)
         builder.space(8f)
 
-        // ===== HASIL DIAGNOSA RINGKASAN =====
         if (results.isNotEmpty()) {
             builder.drawSectionHeader("HASIL DIAGNOSA")
-
             val mainResult = results.first()
             builder.drawHighlightBox(
                 title = "Diagnosa Utama: ${mainResult.hipotesis.kode} - ${mainResult.hipotesis.nama}",
                 content = "CF Combine: ${String.format("%.4f", mainResult.cfCombine)}  •  Persentase Keyakinan: ${mainResult.percentage}%",
-                bgColor = PdfBuilder.Colors.primaryLight,
-                borderColor = PdfBuilder.Colors.primary,
-                titleColor = PdfBuilder.Colors.primaryDark
+                bgColor = PdfBuilder.Colors.primaryLight, borderColor = PdfBuilder.Colors.primary, titleColor = PdfBuilder.Colors.primaryDark
             )
         }
 
         builder.space(10f)
-
-        // ===== DETAIL PERHITUNGAN PER HIPOTESIS =====
         builder.drawSectionHeader("DETAIL PERHITUNGAN CERTAINTY FACTOR")
-
-        // Formula explanation box
         builder.drawHighlightBox(
             title = "Rumus Perhitungan",
             content = "CF Gejala = CF Pakar × CF User  •  CF Combine = CF_old + CF_new × (1 - CF_old)",
-            bgColor = PdfBuilder.Colors.bgLight,
-            borderColor = PdfBuilder.Colors.border,
-            titleColor = PdfBuilder.Colors.textMedium,
-            contentColor = PdfBuilder.Colors.textMedium
+            bgColor = PdfBuilder.Colors.bgLight, borderColor = PdfBuilder.Colors.border,
+            titleColor = PdfBuilder.Colors.textMedium, contentColor = PdfBuilder.Colors.textMedium
         )
 
         results.forEach { result ->
             builder.ensureSpace(50f)
-
-            // ---- Hipotesis sub-header with badge ----
             val hipHeaderText = "${result.hipotesis.kode} - ${result.hipotesis.nama}"
             val badgeText = "${result.percentage}%"
-            
-            // Measure badge first to reserve space
             val badgePaint = Paint().apply { isAntiAlias = true; textSize = 10f; isFakeBoldText = true }
             val badgeTextWidth = badgePaint.measureText(badgeText)
             val badgeTotalWidth = badgeTextWidth + 18f
             val maxHeaderWidth = builder.contentWidth - badgeTotalWidth - 16f
-
-            // Draw background card for the header
             val headerLines = builder.wrapText(hipHeaderText, 10.5f, maxHeaderWidth, bold = true)
             val headerBlockHeight = headerLines.size * 15f + 14f
 
-            builder.drawRoundedRect(
-                builder.marginLeft, builder.y - 4f,
-                builder.pageWidth - builder.marginRight, builder.y + headerBlockHeight,
-                6f, PdfBuilder.Colors.bgLight
-            )
-            builder.drawRoundedRectStroke(
-                builder.marginLeft, builder.y - 4f,
-                builder.pageWidth - builder.marginRight, builder.y + headerBlockHeight,
-                6f, PdfBuilder.Colors.border, 0.5f
-            )
+            builder.drawRoundedRect(builder.marginLeft, builder.y - 4f, builder.pageWidth - builder.marginRight, builder.y + headerBlockHeight, 6f, PdfBuilder.Colors.bgLight)
+            builder.drawRoundedRectStroke(builder.marginLeft, builder.y - 4f, builder.pageWidth - builder.marginRight, builder.y + headerBlockHeight, 6f, PdfBuilder.Colors.border, 0.5f)
 
-            // Accent strip left
             val accentPaint = Paint().apply { isAntiAlias = true; style = Paint.Style.FILL; color = PdfBuilder.Colors.primary }
-            builder.canvas.drawRect(
-                builder.marginLeft, builder.y - 1f,
-                builder.marginLeft + 4f, builder.y + headerBlockHeight - 3f,
-                accentPaint
-            )
+            builder.canvas.drawRect(builder.marginLeft, builder.y - 1f, builder.marginLeft + 4f, builder.y + headerBlockHeight - 3f, accentPaint)
 
-            // Draw title lines
             val titleStartY = builder.y + 10f
             val titlePaint = Paint().apply { isAntiAlias = true; textSize = 10.5f; isFakeBoldText = true; color = PdfBuilder.Colors.primaryDark }
-            headerLines.forEachIndexed { i, line ->
-                builder.canvas.drawText(line, builder.marginLeft + 14f, titleStartY + i * 15f, titlePaint)
-            }
+            headerLines.forEachIndexed { i, line -> builder.canvas.drawText(line, builder.marginLeft + 14f, titleStartY + i * 15f, titlePaint) }
 
-            // Draw percentage badge (vertically centered)
             val badgeX = builder.pageWidth - builder.marginRight - badgeTotalWidth - 10f
             val badgeCenterY = builder.y + headerBlockHeight / 2f
-            builder.drawRoundedRect(
-                badgeX, badgeCenterY - 10f,
-                badgeX + badgeTotalWidth, badgeCenterY + 10f,
-                5f, PdfBuilder.Colors.primary
-            )
+            builder.drawRoundedRect(badgeX, badgeCenterY - 10f, badgeX + badgeTotalWidth, badgeCenterY + 10f, 5f, PdfBuilder.Colors.primary)
             badgePaint.color = PdfBuilder.Colors.white
-            val badgeDrawX = badgeX + (badgeTotalWidth - badgeTextWidth) / 2f
-            builder.canvas.drawText(badgeText, badgeDrawX, badgeCenterY + 4f, badgePaint)
+            builder.canvas.drawText(badgeText, badgeX + (badgeTotalWidth - badgeTextWidth) / 2f, badgeCenterY + 4f, badgePaint)
 
             builder.y += headerBlockHeight + 8f
 
-            // ---- Calculation table with alignment ----
-            val calcColumns = listOf(
-                "Gejala" to 2.4f,
-                "CF Pakar" to 1.0f,
-                "CF User" to 1.0f,
-                "CF Gejala" to 1.1f,
-                "CF Combine" to 1.1f
-            )
-            val calcAligns = listOf(
-                PdfBuilder.Align.LEFT,
-                PdfBuilder.Align.CENTER,
-                PdfBuilder.Align.CENTER,
-                PdfBuilder.Align.CENTER,
-                PdfBuilder.Align.CENTER
-            )
+            val calcColumns = listOf("Gejala" to 2.4f, "CF Pakar" to 1.0f, "CF User" to 1.0f, "CF Gejala" to 1.1f, "CF Combine" to 1.1f)
+            val calcAligns = listOf(PdfBuilder.Align.LEFT, PdfBuilder.Align.CENTER, PdfBuilder.Align.CENTER, PdfBuilder.Align.CENTER, PdfBuilder.Align.CENTER)
             val calcRows = result.steps.map { step ->
-                listOf(
-                    step.gejalaKode,
-                    String.format("%.4f", step.cfPakar),
-                    String.format("%.4f", step.cfUser),
-                    String.format("%.4f", step.cfGejala),
-                    String.format("%.4f", step.cfSesudah)
-                )
+                listOf(step.gejalaKode, String.format("%.4f", step.cfPakar), String.format("%.4f", step.cfUser), String.format("%.4f", step.cfGejala), String.format("%.4f", step.cfSesudah))
             }
-            builder.drawTable(
-                calcColumns, calcRows,
-                columnAligns = calcAligns,
-                lastColumnHighlight = true
-            )
-
-            // ---- CF Combine Akhir row ----
-            val finalValue = "${String.format("%.4f", result.cfCombine)} (${result.percentage}%)"
-            builder.drawTableFooterRow("CF Combine Akhir:", finalValue)
-
+            builder.drawTable(calcColumns, calcRows, columnAligns = calcAligns, lastColumnHighlight = true)
+            builder.drawTableFooterRow("CF Combine Akhir:", "${String.format("%.4f", result.cfCombine)} (${result.percentage}%)")
             builder.space(12f)
         }
 
-        // ===== RANKING =====
         if (results.isNotEmpty()) {
             builder.drawSectionHeader("PERINGKAT HASIL DIAGNOSA")
-
-            results.forEachIndexed { idx, res ->
-                builder.drawRankingItem(
-                    rank = idx + 1,
-                    label = "${res.hipotesis.kode} - ${res.hipotesis.nama}",
-                    percentage = res.percentage
-                )
-            }
+            results.forEachIndexed { idx, res -> builder.drawRankingItem(rank = idx + 1, label = "${res.hipotesis.kode} - ${res.hipotesis.nama}", percentage = res.percentage) }
             builder.space(8f)
-        }
 
-        // ===== KESIMPULAN =====
-        if (results.isNotEmpty()) {
             builder.drawSectionHeader("KESIMPULAN")
-
             val main = results.first()
-
-            // Main diagnosis box
-            builder.drawHighlightBox(
-                title = "Diagnosa Utama: ${main.hipotesis.nama} (${main.percentage}%)",
-                content = "Berdasarkan analisis Certainty Factor, penyakit yang paling mungkin menyerang udang adalah ${main.hipotesis.nama} dengan tingkat keyakinan ${main.percentage}%.",
-                bgColor = PdfBuilder.Colors.successBg,
-                borderColor = PdfBuilder.Colors.success,
-                titleColor = PdfBuilder.Colors.success
-            )
-
+            builder.drawHighlightBox(title = "Diagnosa Utama: ${main.hipotesis.nama} (${main.percentage}%)", content = "Berdasarkan analisis Certainty Factor, penyakit yang paling mungkin menyerang udang adalah ${main.hipotesis.nama} dengan tingkat keyakinan ${main.percentage}%.", bgColor = PdfBuilder.Colors.successBg, borderColor = PdfBuilder.Colors.success, titleColor = PdfBuilder.Colors.success)
             builder.space(10f)
-
-            // Deskripsi
-            if (!main.hipotesis.deskripsi.isNullOrBlank()) {
-                builder.drawHighlightBox(
-                    title = "Deskripsi Penyakit",
-                    content = main.hipotesis.deskripsi,
-                    bgColor = PdfBuilder.Colors.bgCard,
-                    borderColor = PdfBuilder.Colors.border,
-                    titleColor = PdfBuilder.Colors.textMedium
-                )
-            }
-
-            builder.space(10f)
-
-            // Rekomendasi
-            if (!main.hipotesis.rekomendasi.isNullOrBlank()) {
-                builder.drawHighlightBox(
-                    title = "Rekomendasi Penanganan",
-                    content = main.hipotesis.rekomendasi,
-                    bgColor = PdfBuilder.Colors.primaryLight,
-                    borderColor = PdfBuilder.Colors.primary,
-                    titleColor = PdfBuilder.Colors.primaryDark
-                )
-            }
+            if (!main.hipotesis.deskripsi.isNullOrBlank()) { builder.drawHighlightBox(title = "Deskripsi Penyakit", content = main.hipotesis.deskripsi, bgColor = PdfBuilder.Colors.bgCard, borderColor = PdfBuilder.Colors.border, titleColor = PdfBuilder.Colors.textMedium); builder.space(10f) }
+            if (!main.hipotesis.rekomendasi.isNullOrBlank()) { builder.drawHighlightBox(title = "Rekomendasi Penanganan", content = main.hipotesis.rekomendasi, bgColor = PdfBuilder.Colors.primaryLight, borderColor = PdfBuilder.Colors.primary, titleColor = PdfBuilder.Colors.primaryDark) }
         }
 
-        // ===== FOOTER NOTE =====
         builder.space(16f)
         builder.ensureSpace(30f)
         builder.drawDivider()
         builder.space(4f)
-
         val footerPaint = Paint().apply { isAntiAlias = true; textSize = 7.5f; color = PdfBuilder.Colors.textMuted }
         val timestamp = SimpleDateFormat("dd MMMM yyyy, HH:mm 'WIB'", Locale("id", "ID")).format(Date())
         builder.canvas.drawText("Dokumen ini digenerate secara otomatis oleh Sistem Cerdas Vename pada $timestamp.", builder.marginLeft, builder.y, footerPaint)
         builder.y += 11f
         builder.canvas.drawText("Hasil diagnosa bersifat informatif dan tidak menggantikan konsultasi dengan ahli perikanan.", builder.marginLeft, builder.y, footerPaint)
 
-        // ===== FINISH =====
         builder.finishDocument()
 
-        // Save file
         val documentsDir = File(context.getExternalFilesDir(null), "VENAME_Reports")
         documentsDir.mkdirs()
         val timestamp2 = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
         val fileName = "Diagnosa_${kuesioner.namaPetambak.replace(" ", "_")}_$timestamp2.pdf"
         val file = File(documentsDir, fileName)
-
         FileOutputStream(file).use { builder.doc.writeTo(it) }
         builder.doc.close()
 
         Toast.makeText(context, "PDF berhasil disimpan!", Toast.LENGTH_SHORT).show()
 
-        // Open PDF
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/pdf")
-            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        try {
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(context, "PDF tersimpan di: ${file.absolutePath}", Toast.LENGTH_LONG).show()
-        }
-
+        val intent = Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, "application/pdf"); flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK }
+        try { context.startActivity(intent) } catch (e: Exception) { Toast.makeText(context, "PDF tersimpan di: ${file.absolutePath}", Toast.LENGTH_LONG).show() }
     } catch (e: Exception) {
         Toast.makeText(context, "Gagal export PDF: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
     }

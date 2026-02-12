@@ -38,6 +38,7 @@ class DashboardViewModel : ViewModel() {
     private val gejalaRepository = GejalaRepository()
     private val hipotesisRepository = HipotesisRepository()
     private val kuesionerRepository = KuesionerRepository()
+    private val ghRepository = GejalaHipotesisRepository()
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
@@ -51,16 +52,18 @@ class DashboardViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
 
             try {
-                // Fetch all data in parallel-ish
+                // Fetch all data
                 val gejalaResult = gejalaRepository.getAll()
                 val hipotesisResult = hipotesisRepository.getAll()
                 val kuesionerResult = kuesionerRepository.getAllKuesioner()
                 val nilaiCfResult = kuesionerRepository.getAllNilaiCf()
+                val ghResult = ghRepository.getAll()
 
                 val gejalas = gejalaResult.getOrDefault(emptyList())
                 val hipotesisList = hipotesisResult.getOrDefault(emptyList())
                 val kuesioners = kuesionerResult.getOrDefault(emptyList())
                 val nilaiCfs = nilaiCfResult.getOrDefault(emptyList())
+                val ghList = ghResult.getOrDefault(emptyList())
 
                 // Stats
                 val stats = DashboardStats(
@@ -70,9 +73,9 @@ class DashboardViewModel : ViewModel() {
                     totalNilaiCf = nilaiCfs.size
                 )
 
-                // Top hipotesis by gejala count
+                // Top hipotesis by gejala count (via gejala_hipotesis pivot)
                 val topHipotesis = hipotesisList.map { h ->
-                    val count = gejalas.count { it.hipotesisId == h.id }
+                    val count = ghList.count { it.hipotesisId == h.id }
                     HipotesisWithGejalaCount(hipotesis = h, gejalaCount = count)
                 }
                     .sortedByDescending { it.gejalaCount }

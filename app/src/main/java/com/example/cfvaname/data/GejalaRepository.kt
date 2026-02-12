@@ -5,6 +5,8 @@ import io.github.jan.supabase.postgrest.query.Order
 
 /**
  * Repository CRUD untuk tabel gejalas di Supabase
+ * PERUBAHAN: Tabel gejalas tidak lagi punya hipotesis_id.
+ * Relasi gejala <-> hipotesis via tabel gejala_hipotesis.
  */
 class GejalaRepository {
 
@@ -50,7 +52,7 @@ class GejalaRepository {
     }
 
     /**
-     * Tambah gejala baru
+     * Tambah gejala baru (tanpa hipotesis_id)
      */
     suspend fun insert(request: GejalaRequest): Result<Gejala> {
         return try {
@@ -71,7 +73,7 @@ class GejalaRepository {
     }
 
     /**
-     * Update gejala berdasarkan id
+     * Update gejala berdasarkan id (tanpa hipotesis_id)
      */
     suspend fun update(id: Long, request: GejalaRequest): Result<Gejala> {
         return try {

@@ -84,8 +84,8 @@ fun GejalaScreen(
                         itemsIndexed(uiState.gejalaList, key = { _, g -> g.id }) { _, gejala ->
                             GejalaCard(
                                 gejala = gejala,
-                                hipotesisNama = gejalaViewModel.getHipotesisNama(gejala.hipotesisId),
-                                hipotesisKode = gejalaViewModel.getHipotesisKode(gejala.hipotesisId),
+                                hipotesisNama = gejalaViewModel.getHipotesisNamaForGejala(gejala.id),
+                                hipotesisKode = gejalaViewModel.getHipotesisKodeForGejala(gejala.id),
                                 onEdit = { gejalaViewModel.showEditDialog(gejala) },
                                 onDelete = { gejalaViewModel.showDeleteDialog(gejala) }
                             )
@@ -108,11 +108,12 @@ fun GejalaScreen(
     if (uiState.showAddDialog) {
         GejalaFormDialog(
             title = stringResource(AppStrings.AddSymptom), kode = uiState.formKode, nama = uiState.formNama,
-            selectedHipotesisId = uiState.formHipotesisId, hipotesisList = uiState.hipotesisList,
+            selectedHipotesisIds = uiState.formSelectedHipotesisIds,
+            hipotesisList = uiState.hipotesisList,
             errorMessage = uiState.formError, isSaving = uiState.isSaving,
             onKodeChange = { gejalaViewModel.onFormKodeChange(it) },
             onNamaChange = { gejalaViewModel.onFormNamaChange(it) },
-            onHipotesisIdChange = { gejalaViewModel.onFormHipotesisIdChange(it) },
+            onToggleHipotesis = { gejalaViewModel.toggleHipotesisSelection(it) },
             onSave = { gejalaViewModel.saveNewGejala() },
             onDismiss = { gejalaViewModel.hideAddDialog() }
         )
@@ -120,11 +121,12 @@ fun GejalaScreen(
     if (uiState.showEditDialog) {
         GejalaFormDialog(
             title = stringResource(AppStrings.EditSymptom), kode = uiState.formKode, nama = uiState.formNama,
-            selectedHipotesisId = uiState.formHipotesisId, hipotesisList = uiState.hipotesisList,
+            selectedHipotesisIds = uiState.formSelectedHipotesisIds,
+            hipotesisList = uiState.hipotesisList,
             errorMessage = uiState.formError, isSaving = uiState.isSaving,
             onKodeChange = { gejalaViewModel.onFormKodeChange(it) },
             onNamaChange = { gejalaViewModel.onFormNamaChange(it) },
-            onHipotesisIdChange = { gejalaViewModel.onFormHipotesisIdChange(it) },
+            onToggleHipotesis = { gejalaViewModel.toggleHipotesisSelection(it) },
             onSave = { gejalaViewModel.saveEditGejala() },
             onDismiss = { gejalaViewModel.hideEditDialog() }
         )
@@ -207,19 +209,19 @@ fun GejalaCard(gejala: Gejala, hipotesisNama: String, hipotesisKode: String, onE
     }
 }
 
+/**
+ * Form Dialog untuk Gejala - sekarang mendukung multiple hipotesis selection (many-to-many)
+ * Menggunakan checklist alih-alih single dropdown
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GejalaFormDialog(
     title: String, kode: String, nama: String,
-    selectedHipotesisId: Long, hipotesisList: List<Hipotesis>,
+    selectedHipotesisIds: Set<Long>, hipotesisList: List<Hipotesis>,
     errorMessage: String?, isSaving: Boolean,
     onKodeChange: (String) -> Unit, onNamaChange: (String) -> Unit,
-    onHipotesisIdChange: (Long) -> Unit, onSave: () -> Unit, onDismiss: () -> Unit
+    onToggleHipotesis: (Long) -> Unit, onSave: () -> Unit, onDismiss: () -> Unit
 ) {
-    var dropdownExpanded by remember { mutableStateOf(false) }
-    val selectedHipotesis = hipotesisList.find { it.id == selectedHipotesisId }
-    val displayText = if (selectedHipotesis != null) "${selectedHipotesis.kode} - ${selectedHipotesis.nama}" else ""
-
     Dialog(onDismissRequest = { if (!isSaving) onDismiss() }) {
         Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp, modifier = Modifier.fillMaxWidth(0.9f)) {
             Column(Modifier.padding(24.dp)) {
@@ -249,47 +251,72 @@ fun GejalaFormDialog(
                 )
                 Spacer(Modifier.height(12.dp))
 
-                // Hipotesis Dropdown
-                Text(stringResource(AppStrings.SelectHypothesis), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(4.dp))
+                // Hipotesis Multi-Select (Many-to-Many)
+                Text(
+                    "${stringResource(AppStrings.SelectHypothesis)} (${selectedHipotesisIds.size} dipilih)",
+                    fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
 
-                ExposedDropdownMenuBox(expanded = dropdownExpanded, onExpandedChange = { if (!isSaving) dropdownExpanded = it }) {
-                    OutlinedTextField(
-                        value = displayText, onValueChange = {}, readOnly = true,
-                        placeholder = { Text(stringResource(AppStrings.SelectHypothesis)) },
-                        leadingIcon = { Icon(Icons.Filled.Biotech, null, tint = VenamePrimary) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
-                        singleLine = true, shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = VenamePrimary, cursorColor = VenamePrimary),
-                        enabled = !isSaving, modifier = Modifier.fillMaxWidth().menuAnchor()
-                    )
-                    ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(0.5f),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp)
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         if (hipotesisList.isEmpty()) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(AppStrings.NoHypothesis), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
-                                onClick = { dropdownExpanded = false }
-                            )
-                        } else {
-                            hipotesisList.forEach { hipotesis ->
-                                val isSelected = hipotesis.id == selectedHipotesisId
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Surface(shape = RoundedCornerShape(4.dp), color = if (isSelected) VenamePrimary.copy(0.15f) else VenameSecondary.copy(0.1f)) {
-                                                Text(hipotesis.kode, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSelected) VenamePrimary else VenameSecondary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                            }
-                                            Spacer(Modifier.width(10.dp))
-                                            Text(hipotesis.nama, fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal, color = if (isSelected) VenamePrimary else MaterialTheme.colorScheme.onSurface)
-                                        }
-                                    },
-                                    onClick = {
-                                        onHipotesisIdChange(hipotesis.id)
-                                        dropdownExpanded = false
-                                    },
-                                    trailingIcon = {
-                                        if (isSelected) Icon(Icons.Filled.Check, null, tint = VenamePrimary, modifier = Modifier.size(18.dp))
-                                    }
+                            item {
+                                Text(
+                                    stringResource(AppStrings.NoHypothesis),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 14.sp,
+                                    modifier = Modifier.padding(12.dp)
                                 )
+                            }
+                        } else {
+                            items(hipotesisList.size) { index ->
+                                val hipotesis = hipotesisList[index]
+                                val isSelected = hipotesis.id in selectedHipotesisIds
+
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) VenamePrimary.copy(0.1f) else Color.Transparent,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable(enabled = !isSaving) { onToggleHipotesis(hipotesis.id) }
+                                ) {
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Checkbox(
+                                            checked = isSelected,
+                                            onCheckedChange = { onToggleHipotesis(hipotesis.id) },
+                                            enabled = !isSaving,
+                                            colors = CheckboxDefaults.colors(checkedColor = VenamePrimary)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Surface(shape = RoundedCornerShape(4.dp), color = if (isSelected) VenamePrimary.copy(0.15f) else VenameSecondary.copy(0.1f)) {
+                                            Text(
+                                                hipotesis.kode, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                                color = if (isSelected) VenamePrimary else VenameSecondary,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            hipotesis.nama, fontSize = 13.sp,
+                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                            color = if (isSelected) VenamePrimary else MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

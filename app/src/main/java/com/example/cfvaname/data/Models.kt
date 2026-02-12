@@ -41,25 +41,26 @@ data class UserSession(
 
 /**
  * Model Gejala - mapping ke tabel gejalas di Supabase
+ * PERUBAHAN: Tidak ada lagi hipotesis_id di tabel gejalas.
+ * Relasi gejala <-> hipotesis sekarang many-to-many via tabel gejala_hipotesis.
  */
 @Serializable
 data class Gejala(
     val id: Long = 0,
     val kode: String = "",
     val nama: String = "",
-    @SerialName("hipotesis_id") val hipotesisId: Long = 0,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
 )
 
 /**
  * Request body untuk insert/update gejala
+ * PERUBAHAN: Tidak ada lagi hipotesis_id
  */
 @Serializable
 data class GejalaRequest(
     val kode: String,
-    val nama: String,
-    @SerialName("hipotesis_id") val hipotesisId: Long
+    val nama: String
 )
 
 // ===================================================
@@ -89,6 +90,32 @@ data class HipotesisRequest(
     val nama: String,
     val deskripsi: String? = null,
     val rekomendasi: String? = null
+)
+
+// ===================================================
+// GEJALA_HIPOTESIS MODELS (PIVOT TABLE - many-to-many)
+// ===================================================
+
+/**
+ * Model GejalaHipotesis - mapping ke tabel gejala_hipotesis di Supabase
+ * Tabel pivot yang menghubungkan gejala dengan hipotesis (many-to-many)
+ */
+@Serializable
+data class GejalaHipotesis(
+    val id: Long = 0,
+    @SerialName("gejala_id") val gejalaId: Long = 0,
+    @SerialName("hipotesis_id") val hipotesisId: Long = 0,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null
+)
+
+/**
+ * Request body untuk insert gejala_hipotesis
+ */
+@Serializable
+data class GejalaHipotesisRequest(
+    @SerialName("gejala_id") val gejalaId: Long,
+    @SerialName("hipotesis_id") val hipotesisId: Long
 )
 
 // ===================================================
@@ -123,11 +150,13 @@ data class NilaiCfInsertRequest(
 
 /**
  * Model Rule - mapping ke tabel rules di Supabase
+ * PERUBAHAN: Sekarang merujuk ke gejala_hipotesis_id (bukan gejala_id)
+ * Artinya: rule = "gejala X untuk hipotesis Y" punya CF pakar tertentu
  */
 @Serializable
 data class Rule(
     val id: Long = 0,
-    @SerialName("gejala_id") val gejalaId: Long = 0,
+    @SerialName("gejala_hipotesis_id") val gejalaHipotesisId: Long = 0,
     @SerialName("cf_id") val cfId: Long = 0,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
@@ -135,10 +164,11 @@ data class Rule(
 
 /**
  * Request body untuk insert/update rule
+ * PERUBAHAN: Sekarang merujuk ke gejala_hipotesis_id
  */
 @Serializable
 data class RuleRequest(
-    @SerialName("gejala_id") val gejalaId: Long,
+    @SerialName("gejala_hipotesis_id") val gejalaHipotesisId: Long,
     @SerialName("cf_id") val cfId: Long
 )
 
@@ -165,20 +195,28 @@ data class KuesionerInsertRequest(
     @SerialName("usia_udang") val usiaUdang: Int
 )
 
+/**
+ * Model KuesionerData - mapping ke tabel kuesioner_data di Supabase
+ * PERUBAHAN: Sekarang merujuk ke gejala_hipotesis_id (bukan gejala_id)
+ */
 @Serializable
 data class KuesionerData(
     val id: Long = 0,
     @SerialName("kuesioner_id") val kuesionerId: Long = 0,
-    @SerialName("gejala_id") val gejalaId: Long = 0,
+    @SerialName("gejala_hipotesis_id") val gejalaHipotesisId: Long = 0,
     @SerialName("cf_value") val cfValue: Long = 0,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
 )
 
+/**
+ * Request body untuk insert kuesioner_data
+ * PERUBAHAN: Sekarang merujuk ke gejala_hipotesis_id
+ */
 @Serializable
 data class KuesionerDataInsertRequest(
     @SerialName("kuesioner_id") val kuesionerId: Long,
-    @SerialName("gejala_id") val gejalaId: Long,
+    @SerialName("gejala_hipotesis_id") val gejalaHipotesisId: Long,
     @SerialName("cf_value") val cfValue: Long
 )
 

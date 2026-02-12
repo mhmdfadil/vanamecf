@@ -8,9 +8,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// Data untuk menyimpan state rule per gejala
+/**
+ * State untuk setiap gejala dalam satu hipotesis (via gejala_hipotesis pivot)
+ * PERUBAHAN: Menyimpan gejalaHipotesisId (pivot ID) sebagai referensi rule
+ */
 data class GejalaRuleState(
     val gejala: Gejala,
+    val gejalaHipotesisId: Long, // ID dari tabel gejala_hipotesis
     val currentRule: Rule?,
     val selectedCfId: Long // CF yang dipilih user
 )
@@ -36,6 +40,7 @@ class RuleViewModel : ViewModel() {
     private val gejalaRepo = GejalaRepository()
     private val hipotesisRepo = HipotesisRepository()
     private val nilaiCfRepo = NilaiCfRepository()
+    private val ghRepo = GejalaHipotesisRepository()
 
     private val _uiState = MutableStateFlow(RuleUiState())
     val uiState: StateFlow<RuleUiState> = _uiState.asStateFlow()
@@ -52,27 +57,38 @@ class RuleViewModel : ViewModel() {
             val gejalaResult = gejalaRepo.getAll()
             val nilaiCfResult = nilaiCfRepo.getAll()
             val ruleResult = ruleRepo.getAll()
+            val ghResult = ghRepo.getAll()
 
             if (hipotesisResult.isSuccess && gejalaResult.isSuccess &&
-                nilaiCfResult.isSuccess && ruleResult.isSuccess) {
+                nilaiCfResult.isSuccess && ruleResult.isSuccess && ghResult.isSuccess
+            ) {
 
                 val hipotesisList = hipotesisResult.getOrNull() ?: emptyList()
                 val gejalaList = gejalaResult.getOrNull() ?: emptyList()
                 val nilaiCfList = nilaiCfResult.getOrNull() ?: emptyList()
                 val ruleList = ruleResult.getOrNull() ?: emptyList()
+                val ghList = ghResult.getOrNull() ?: emptyList()
+
+                val gejalaMap = gejalaList.associateBy { it.id }
 
                 val groups = hipotesisList.mapNotNull { hipotesis ->
-                    val gejalasForThisHipotesis = gejalaList.filter { it.hipotesisId == hipotesis.id }
-                    if (gejalasForThisHipotesis.isEmpty()) return@mapNotNull null
+                    // Cari semua gejala_hipotesis untuk hipotesis ini
+                    val ghForHipotesis = ghList.filter { it.hipotesisId == hipotesis.id }
+                    if (ghForHipotesis.isEmpty()) return@mapNotNull null
 
-                    val gejalaRules = gejalasForThisHipotesis.map { gejala ->
-                        val existingRule = ruleList.find { it.gejalaId == gejala.id }
+                    val gejalaRules = ghForHipotesis.mapNotNull { gh ->
+                        val gejala = gejalaMap[gh.gejalaId] ?: return@mapNotNull null
+                        // Rule sekarang merujuk ke gejala_hipotesis_id
+                        val existingRule = ruleList.find { it.gejalaHipotesisId == gh.id }
                         GejalaRuleState(
                             gejala = gejala,
+                            gejalaHipotesisId = gh.id,
                             currentRule = existingRule,
                             selectedCfId = existingRule?.cfId ?: 0L
                         )
                     }
+
+                    if (gejalaRules.isEmpty()) return@mapNotNull null
 
                     HipotesisGroup(
                         hipotesis = hipotesis,
@@ -94,7 +110,6 @@ class RuleViewModel : ViewModel() {
         }
     }
 
-    // 🔹 Perbaikan fungsi updateGejalaCfSelection
     fun updateGejalaCfSelection(hipotesisId: Long, gejalaId: Long, cfId: Long) {
         val currentGroups = _uiState.value.hipotesisGroups
         val updatedGroups = currentGroups.map { group ->
@@ -121,8 +136,9 @@ class RuleViewModel : ViewModel() {
             for (gejalaRule in allGejalaRules) {
                 if (gejalaRule.selectedCfId == 0L) continue // Skip if not set
 
+                // PERUBAHAN: Rule sekarang merujuk ke gejala_hipotesis_id
                 val request = RuleRequest(
-                    gejalaId = gejalaRule.gejala.id,
+                    gejalaHipotesisId = gejalaRule.gejalaHipotesisId,
                     cfId = gejalaRule.selectedCfId
                 )
 

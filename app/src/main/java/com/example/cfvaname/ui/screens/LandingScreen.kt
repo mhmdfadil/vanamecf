@@ -188,7 +188,7 @@ fun LandingScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "© 2026 Sistem Cerdas Vename",
+                text = "© 2026 Sistem Cerdas Vaname",
                 color = TextSecondary,
                 fontSize = 13.sp
             )
