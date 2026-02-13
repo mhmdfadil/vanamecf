@@ -25,7 +25,11 @@ import com.example.cfvaname.ui.theme.*
 
 @Composable
 fun LandingScreen(
-    onLoginClick: () -> Unit
+    onLoginClick: () -> Unit,
+    onTentangSistemClick: () -> Unit,
+    onCaraPakaiClick: () -> Unit,
+    onKuesionerClick: () -> Unit,
+    onReportsClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -90,7 +94,7 @@ fun LandingScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Solusi cerdas untuk pengelolaan data\ndan monitoring secara real-time",
+                    text = "Diagnosis Penyakit Udang Vaname\nDengan Metode Certainty Factor",
                     color = Color.White.copy(alpha = 0.85f),
                     fontSize = 15.sp,
                     textAlign = TextAlign.Center,
@@ -99,32 +103,60 @@ fun LandingScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Login Button
+                // Primary Action Button - Mulai Diagnosis
                 Button(
-                    onClick = onLoginClick,
+                    onClick = onKuesionerClick,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White
                     ),
                     shape = RoundedCornerShape(28.dp),
                     modifier = Modifier
-                        .width(220.dp)
-                        .height(52.dp),
+                        .width(240.dp)
+                        .height(56.dp),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 6.dp
                     )
                 ) {
                     Icon(
-                        Icons.Filled.Login,
+                        Icons.Filled.PlayArrow,
                         contentDescription = null,
                         tint = VenamePrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Mulai Diagnosis",
+                        color = VenamePrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Login Button
+                OutlinedButton(
+                    onClick = onLoginClick,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(28.dp),
+                    modifier = Modifier
+                        .width(240.dp)
+                        .height(48.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.Login,
+                        contentDescription = null,
+                        tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Masuk",
-                        color = VenamePrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        text = "Login Admin",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp
                     )
                 }
             }
@@ -132,22 +164,71 @@ fun LandingScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // === QUICK ACCESS MENU ===
+        Text(
+            text = "Akses Cepat",
+            modifier = Modifier.padding(horizontal = 24.dp),
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            color = TextPrimary
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        val quickMenuItems = listOf(
+            QuickMenuItem(
+                icon = Icons.Filled.Info,
+                title = "Tentang Sistem",
+                description = "Informasi lengkap tentang aplikasi",
+                color = VenamePrimary,
+                onClick = onTentangSistemClick
+            ),
+            QuickMenuItem(
+                icon = Icons.Filled.MenuBook,
+                title = "Cara Menggunakan",
+                description = "Panduan lengkap penggunaan sistem",
+                color = VenameSecondary,
+                onClick = onCaraPakaiClick
+            ),
+            QuickMenuItem(
+                icon = Icons.Filled.Assignment,
+                title = "Mulai Diagnosis",
+                description = "Diagnosa penyakit udang vaname",
+                color = VenameAccent,
+                onClick = onKuesionerClick
+            ),
+            QuickMenuItem(
+                icon = Icons.Filled.FolderOpen,
+                title = "Riwayat Laporan",
+                description = "Lihat laporan diagnosis sebelumnya",
+                color = Color(0xFF7E57C2),
+                onClick = onReportsClick
+            )
+        )
+
+        quickMenuItems.forEach { item ->
+            QuickMenuCard(item = item)
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         // === FEATURES SECTION ===
         Text(
             text = "Fitur Unggulan",
             modifier = Modifier.padding(horizontal = 24.dp),
             fontWeight = FontWeight.Bold,
-            fontSize = 22.sp,
+            fontSize = 20.sp,
             color = TextPrimary
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         val features = listOf(
-            Triple(Icons.Filled.Analytics, "Analitik Real-time", "Pantau data secara langsung dengan dashboard interaktif"),
-            Triple(Icons.Filled.Security, "Keamanan Data", "Enkripsi end-to-end dan autentikasi berlapis"),
-            Triple(Icons.Filled.Speed, "Performa Tinggi", "Proses data cepat dengan infrastruktur cloud modern"),
-            Triple(Icons.Filled.Devices, "Multi-Platform", "Akses dari mana saja, kapan saja, di perangkat apa saja")
+            Triple(Icons.Filled.Analytics, "Diagnosis Akurat", "Menggunakan metode Certainty Factor untuk hasil yang presisi"),
+            Triple(Icons.Filled.Speed, "Proses Cepat", "Hasil diagnosis dalam hitungan detik"),
+            Triple(Icons.Filled.PictureAsPdf, "Ekspor PDF", "Simpan hasil diagnosis dalam format PDF"),
+            Triple(Icons.Filled.Devices, "User Friendly", "Interface yang mudah digunakan untuk semua kalangan")
         )
 
         features.forEach { (icon, title, desc) ->
@@ -172,9 +253,9 @@ fun LandingScreen(
                     .padding(20.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(value = "99.9%", label = "Uptime")
-                StatItem(value = "500+", label = "Pengguna")
-                StatItem(value = "24/7", label = "Support")
+                StatItem(value = "13", label = "Penyakit")
+                StatItem(value = "30", label = "Gejala")
+                StatItem(value = "CF", label = "Metode")
             }
         }
 
@@ -191,6 +272,72 @@ fun LandingScreen(
                 text = "© 2026 Sistem Cerdas Vaname",
                 color = TextSecondary,
                 fontSize = 13.sp
+            )
+        }
+    }
+}
+
+data class QuickMenuItem(
+    val icon: ImageVector,
+    val title: String,
+    val description: String,
+    val color: Color,
+    val onClick: () -> Unit
+)
+
+@Composable
+fun QuickMenuCard(item: QuickMenuItem) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 2.dp,
+        onClick = item.onClick
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(item.color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = null,
+                    tint = item.color,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.title,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = item.description,
+                    fontSize = 13.sp,
+                    color = TextSecondary,
+                    lineHeight = 18.sp
+                )
+            }
+
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(24.dp)
             )
         }
     }

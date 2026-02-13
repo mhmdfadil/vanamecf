@@ -13,7 +13,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.cfvaname.data.PreferencesManager
 import com.example.cfvaname.data.SessionManager
-import com.example.cfvaname.data.UserSession
 import com.example.cfvaname.navigation.Screen
 import com.example.cfvaname.ui.components.AppScaffold
 import com.example.cfvaname.ui.screens.*
@@ -42,19 +41,17 @@ fun VenameApp() {
     val loginViewModel: LoginViewModel = viewModel()
     val loginState by loginViewModel.uiState.collectAsState()
 
-    // Language state
+    // Language & Theme state
     var currentLanguage by remember { mutableStateOf(preferencesManager.getLanguage()) }
-    
-    // Theme state
     var currentTheme by remember { mutableStateOf(preferencesManager.getTheme()) }
     val systemInDarkTheme = isSystemInDarkTheme()
     val isDarkTheme = when (currentTheme) {
         "light" -> false
         "dark" -> true
-        else -> systemInDarkTheme // "system"
+        else -> systemInDarkTheme
     }
 
-    // Cek apakah sudah login
+    // User session
     var userSession by remember { mutableStateOf(sessionManager.getSession()) }
     val startDestination = if (userSession != null) Screen.Dashboard.route else Screen.Landing.route
 
@@ -70,7 +67,7 @@ fun VenameApp() {
         }
     }
 
-    // Fungsi logout
+    // Handlers
     val handleLogout: () -> Unit = {
         sessionManager.clearSession()
         userSession = null
@@ -80,7 +77,6 @@ fun VenameApp() {
         }
     }
 
-    // Fungsi navigasi
     val handleNavigate: (String) -> Unit = { route ->
         if (navController.currentDestination?.route != route) {
             navController.navigate(route) {
@@ -90,36 +86,80 @@ fun VenameApp() {
             }
         }
     }
-    
-    // Fungsi ubah bahasa
+
     val handleLanguageChange: (String) -> Unit = { language ->
         currentLanguage = language
         preferencesManager.setLanguage(language)
     }
-    
-    // Fungsi ubah tema
+
     val handleThemeChange: (String) -> Unit = { theme ->
         currentTheme = theme
         preferencesManager.setTheme(theme)
     }
 
-    // Provide language dan theme
     CompositionLocalProvider(LocalLanguage provides currentLanguage) {
         CFVanameTheme(darkTheme = isDarkTheme) {
             NavHost(
                 navController = navController,
                 startDestination = startDestination
             ) {
-                // === LANDING PAGE (sebelum login) ===
+                // =====================================================
+                // USER SCREENS (WITHOUT LOGIN)
+                // =====================================================
+                
                 composable(Screen.Landing.route) {
                     LandingScreen(
                         onLoginClick = {
                             navController.navigate(Screen.Login.route)
+                        },
+                        onTentangSistemClick = {
+                            navController.navigate("tentang_sistem_user")
+                        },
+                        onCaraPakaiClick = {
+                            navController.navigate("cara_pakai_user")
+                        },
+                        onKuesionerClick = {
+                            navController.navigate("kuesioner_user")
+                        },
+                        onReportsClick = {
+                            navController.navigate("reports_user")
                         }
                     )
                 }
 
-                // === LOGIN PAGE ===
+                composable("tentang_sistem_user") {
+                    TentangSistemUserScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("cara_pakai_user") {
+                    CaraPakaiUserScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("kuesioner_user") {
+                    KuesionerUserScreen(
+                        onBack = { navController.popBackStack() },
+                        onViewReports = {
+                            navController.navigate("reports_user") {
+                                popUpTo("kuesioner_user") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                composable("reports_user") {
+                    ReportsUserScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                // =====================================================
+                // AUTH SCREENS
+                // =====================================================
+                
                 composable(Screen.Login.route) {
                     LoginScreen(
                         isLoading = loginState.isLoading,
@@ -133,7 +173,10 @@ fun VenameApp() {
                     )
                 }
 
-                // === DASHBOARD (setelah login, pakai AppScaffold) ===
+                // =====================================================
+                // ADMIN SCREENS (WITH LOGIN & SCAFFOLD)
+                // =====================================================
+                
                 composable(Screen.Dashboard.route) {
                     AppScaffold(
                         currentRoute = Screen.Dashboard.route,
@@ -149,7 +192,6 @@ fun VenameApp() {
                     }
                 }
 
-                // === GEJALA (CRUD data gejala) ===
                 composable(Screen.Gejala.route) {
                     AppScaffold(
                         currentRoute = Screen.Gejala.route,
@@ -162,7 +204,6 @@ fun VenameApp() {
                     }
                 }
 
-                // === HIPOTESIS (CRUD data hipotesis) ===
                 composable(Screen.Hipotesis.route) {
                     AppScaffold(
                         currentRoute = Screen.Hipotesis.route,
@@ -175,7 +216,6 @@ fun VenameApp() {
                     }
                 }
 
-                // === NILAI CF (Certainty Factor) ===
                 composable(Screen.NilaiCf.route) {
                     AppScaffold(
                         currentRoute = Screen.NilaiCf.route,
@@ -188,7 +228,6 @@ fun VenameApp() {
                     }
                 }
 
-                // === RULES ===
                 composable(Screen.Rule.route) {
                     AppScaffold(
                         currentRoute = Screen.Rule.route,
@@ -201,7 +240,6 @@ fun VenameApp() {
                     }
                 }
 
-                // === KUESIONER (Diagnosa) ===
                 composable(Screen.Kuesioner.route) {
                     AppScaffold(
                         currentRoute = Screen.Kuesioner.route,
@@ -214,7 +252,6 @@ fun VenameApp() {
                     }
                 }
 
-                // === PROFILE ===
                 composable(Screen.Profile.route) {
                     AppScaffold(
                         currentRoute = Screen.Profile.route,
@@ -230,7 +267,6 @@ fun VenameApp() {
                     }
                 }
 
-                // === REPORTS ===
                 composable(Screen.Reports.route) {
                     AppScaffold(
                         currentRoute = Screen.Reports.route,
@@ -243,7 +279,6 @@ fun VenameApp() {
                     }
                 }
 
-                // === SETTINGS ===
                 composable(Screen.Settings.route) {
                     AppScaffold(
                         currentRoute = Screen.Settings.route,
@@ -263,7 +298,6 @@ fun VenameApp() {
                     }
                 }
 
-                // === ABOUT ===
                 composable(Screen.About.route) {
                     AppScaffold(
                         currentRoute = Screen.About.route,

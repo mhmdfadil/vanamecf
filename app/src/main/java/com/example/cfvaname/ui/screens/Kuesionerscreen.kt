@@ -713,7 +713,7 @@ private class PdfBuilder(private val context: Context) {
         paint.isFakeBoldText = false
         paint.color = Colors.textMuted
         val footerY = pageHeight - 25f
-        canvas.drawText("Sistem Cerdas Vename", marginLeft, footerY, paint)
+        canvas.drawText("Sistem Cerdas Vaname", marginLeft, footerY, paint)
         val pageText = "Halaman $pageNum"
         val pageTextWidth = paint.measureText(pageText)
         canvas.drawText(pageText, pageWidth - marginRight - pageTextWidth, footerY, paint)
@@ -968,7 +968,7 @@ fun exportPdf(
 
         builder.drawDocumentHeader(
             "Laporan Hasil Diagnosa",
-            "Sistem Cerdas Vename — Platform Monitoring Udang Vaname"
+            "Sistem Cerdas Vaname — Platform Monitoring Udang Vaname"
         )
 
         builder.drawSectionHeader("INFORMASI PETAMBAK")
@@ -1084,7 +1084,7 @@ fun exportPdf(
         builder.space(4f)
         val footerPaint = Paint().apply { isAntiAlias = true; textSize = 7.5f; color = PdfBuilder.Colors.textMuted }
         val timestamp = SimpleDateFormat("dd MMMM yyyy, HH:mm 'WIB'", Locale("id", "ID")).format(Date())
-        builder.canvas.drawText("Dokumen ini digenerate secara otomatis oleh Sistem Cerdas Vename pada $timestamp.", builder.marginLeft, builder.y, footerPaint)
+        builder.canvas.drawText("Dokumen ini digenerate secara otomatis oleh Sistem Cerdas Vaname pada $timestamp.", builder.marginLeft, builder.y, footerPaint)
         builder.y += 11f
         builder.canvas.drawText("Hasil diagnosa bersifat informatif dan tidak menggantikan konsultasi dengan ahli perikanan.", builder.marginLeft, builder.y, footerPaint)
 
