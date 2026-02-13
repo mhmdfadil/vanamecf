@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +64,10 @@ fun DashboardScreen(
     val uiState by dashboardViewModel.uiState.collectAsState()
     val language = com.example.cfvaname.ui.localization.LocalLanguage.current
 
+    // Gunakan warna dari MaterialTheme agar responsif light/dark
+    val textPrimaryColor = MaterialTheme.colorScheme.onSurface
+    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -88,7 +93,7 @@ fun DashboardScreen(
                 Text(
                     text = "${if (language == "en") "Welcome" else "Selamat datang"}, ${userSession?.fullName ?: "User"}!",
                     fontSize = 14.sp,
-                    color = TextSecondary
+                    color = textSecondaryColor
                 )
             }
             // Date chip
@@ -196,15 +201,17 @@ fun DashboardScreen(
                             else "Distribusi Gejala per Hipotesis",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
-                            color = TextPrimary
+                            color = textPrimaryColor
                         )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Bar Chart
+                    // Bar Chart - pass theme-aware colors
                     GejalaBarChart(
                         data = uiState.topHipotesis,
+                        textColor = textSecondaryColor,
+                        gridColor = textSecondaryColor.copy(alpha = 0.15f),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(220.dp)
@@ -226,7 +233,7 @@ fun DashboardScreen(
                                 Text(
                                     text = "${item.hipotesis.kode} - ${item.hipotesis.nama}",
                                     fontSize = 12.sp,
-                                    color = TextSecondary,
+                                    color = textSecondaryColor,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -235,7 +242,7 @@ fun DashboardScreen(
                                     text = "${item.gejalaCount}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
+                                    color = textPrimaryColor
                                 )
                             }
                         }
@@ -263,7 +270,7 @@ fun DashboardScreen(
                         text = if (language == "en") "Recent Questionnaires" else "Kuesioner Terbaru",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = TextPrimary
+                        color = textPrimaryColor
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -272,7 +279,7 @@ fun DashboardScreen(
                         Text(
                             text = stringResource(AppStrings.NoQuestionnaireData),
                             fontSize = 14.sp,
-                            color = TextSecondary,
+                            color = textSecondaryColor,
                             modifier = Modifier.padding(vertical = 16.dp)
                         )
                     } else {
@@ -298,7 +305,7 @@ fun DashboardScreen(
                         else "Hipotesis dengan Gejala Terbanyak",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = TextPrimary
+                        color = textPrimaryColor
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -307,7 +314,7 @@ fun DashboardScreen(
                         Text(
                             text = stringResource(AppStrings.NoHypothesis),
                             fontSize = 14.sp,
-                            color = TextSecondary,
+                            color = textSecondaryColor,
                             modifier = Modifier.padding(vertical = 16.dp)
                         )
                     } else {
@@ -325,21 +332,21 @@ fun DashboardScreen(
                                 text = if (language == "en") "Code" else "Kode",
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp,
-                                color = TextSecondary,
+                                color = textSecondaryColor,
                                 modifier = Modifier.width(60.dp)
                             )
                             Text(
                                 text = if (language == "en") "Hypothesis Name" else "Nama Hipotesis",
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp,
-                                color = TextSecondary,
+                                color = textSecondaryColor,
                                 modifier = Modifier.weight(1f)
                             )
                             Text(
                                 text = if (language == "en") "Symptoms" else "Gejala",
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp,
-                                color = TextSecondary
+                                color = textSecondaryColor
                             )
                         }
 
@@ -357,7 +364,7 @@ fun DashboardScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
-                color = Color(0xFFFDEDED)
+                color = MaterialTheme.colorScheme.errorContainer
             ) {
                 Row(
                     modifier = Modifier.padding(12.dp),
@@ -366,11 +373,15 @@ fun DashboardScreen(
                     Icon(
                         Icons.Filled.ErrorOutline,
                         contentDescription = null,
-                        tint = Color(0xFFD32F2F),
+                        tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = error, fontSize = 13.sp, color = Color(0xFFD32F2F))
+                    Text(
+                        text = error,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
                     Spacer(modifier = Modifier.weight(1f))
                     TextButton(onClick = { dashboardViewModel.loadDashboardData() }) {
                         Text("Retry", fontSize = 12.sp)
@@ -396,6 +407,10 @@ fun DashboardStatCard(
     badgeText: String = "",
     badgeSubText: String = ""
 ) {
+    // Gunakan warna dari MaterialTheme
+    val textPrimaryColor = MaterialTheme.colorScheme.onSurface
+    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
+
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
@@ -412,14 +427,14 @@ fun DashboardStatCard(
                     Text(
                         text = label,
                         fontSize = 12.sp,
-                        color = TextSecondary
+                        color = textSecondaryColor
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = value,
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
-                        color = TextPrimary
+                        color = textPrimaryColor
                     )
                 }
                 Box(
@@ -457,7 +472,7 @@ fun DashboardStatCard(
                     Text(
                         text = badgeSubText,
                         fontSize = 11.sp,
-                        color = TextSecondary,
+                        color = textSecondaryColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -473,6 +488,8 @@ fun DashboardStatCard(
 @Composable
 fun GejalaBarChart(
     data: List<HipotesisWithGejalaCount>,
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    gridColor: Color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f),
     modifier: Modifier = Modifier
 ) {
     val maxValue = (data.maxOfOrNull { it.gejalaCount } ?: 1).coerceAtLeast(1)
@@ -488,8 +505,8 @@ fun GejalaBarChart(
         )
     }
 
-    val textColor = TextSecondary
-    val gridColor = TextSecondary.copy(alpha = 0.15f)
+    // Konversi Color ke ARGB int untuk Canvas nativeCanvas
+    val textColorArgb = textColor.toArgb()
 
     Canvas(modifier = modifier) {
         val chartLeft = 40f
@@ -522,7 +539,7 @@ fun GejalaBarChart(
                 chartLeft - 8f,
                 y + 4f,
                 android.graphics.Paint().apply {
-                    color = textColor.hashCode()
+                    color = textColorArgb
                     textSize = with(density) { 10.sp.toPx() }
                     textAlign = android.graphics.Paint.Align.RIGHT
                 }
@@ -553,7 +570,7 @@ fun GejalaBarChart(
                     x + barWidth / 2,
                     chartBottom - barHeight - 8f,
                     android.graphics.Paint().apply {
-                        color = textColor.hashCode()
+                        color = textColorArgb
                         textSize = with(density) { 11.sp.toPx() }
                         textAlign = android.graphics.Paint.Align.CENTER
                         isFakeBoldText = true
@@ -567,7 +584,7 @@ fun GejalaBarChart(
                 x + barWidth / 2,
                 chartBottom + 24f,
                 android.graphics.Paint().apply {
-                    color = textColor.hashCode()
+                    color = textColorArgb
                     textSize = with(density) { 10.sp.toPx() }
                     textAlign = android.graphics.Paint.Align.CENTER
                 }
@@ -584,6 +601,10 @@ fun RecentKuesionerItem(
     item: KuesionerWithDetail,
     language: String
 ) {
+    // Gunakan warna dari MaterialTheme
+    val textPrimaryColor = MaterialTheme.colorScheme.onSurface
+    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -615,13 +636,13 @@ fun RecentKuesionerItem(
                 text = item.kuesioner.namaPetambak,
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp,
-                color = TextPrimary
+                color = textPrimaryColor
             )
             if (item.kuesioner.lokasiTambak.isNotEmpty()) {
                 Text(
                     text = "${if (language == "en") "Location" else "Lokasi"}: ${item.kuesioner.lokasiTambak}",
                     fontSize = 12.sp,
-                    color = TextSecondary
+                    color = textSecondaryColor
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -633,14 +654,14 @@ fun RecentKuesionerItem(
                         text = "${item.gejalaCount} ${if (language == "en") "symptoms" else "gejala"}",
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         fontSize = 11.sp,
-                        color = TextSecondary
+                        color = textSecondaryColor
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = formatRelativeTime(item.kuesioner.createdAt, language),
                     fontSize = 11.sp,
-                    color = TextSecondary
+                    color = textSecondaryColor
                 )
             }
         }
@@ -652,6 +673,9 @@ fun RecentKuesionerItem(
 // =====================================================
 @Composable
 fun HipotesisTableRow(item: HipotesisWithGejalaCount) {
+    // Gunakan warna dari MaterialTheme
+    val textPrimaryColor = MaterialTheme.colorScheme.onSurface
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -662,13 +686,13 @@ fun HipotesisTableRow(item: HipotesisWithGejalaCount) {
             text = item.hipotesis.kode,
             fontWeight = FontWeight.Bold,
             fontSize = 13.sp,
-            color = TextPrimary,
+            color = textPrimaryColor,
             modifier = Modifier.width(60.dp)
         )
         Text(
             text = item.hipotesis.nama,
             fontSize = 13.sp,
-            color = TextPrimary,
+            color = textPrimaryColor,
             modifier = Modifier.weight(1f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
