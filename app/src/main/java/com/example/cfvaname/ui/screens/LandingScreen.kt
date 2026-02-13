@@ -84,7 +84,7 @@ fun LandingScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "VENAME",
+                    text = "VANAME",
                     color = Color.White,
                     fontSize = 38.sp,
                     fontWeight = FontWeight.ExtraBold,
