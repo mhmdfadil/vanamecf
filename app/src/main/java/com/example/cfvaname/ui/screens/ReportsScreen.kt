@@ -64,6 +64,10 @@ fun ReportsScreen(
     val language = LocalLanguage.current
     val uiState by reportsViewModel.uiState.collectAsState()
 
+    // Theme-aware colors
+    val textPrimaryColor = MaterialTheme.colorScheme.onSurface
+    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
+
     // Preview state
     var previewFile by remember { mutableStateOf<PdfFileItem?>(null) }
 
@@ -76,7 +80,7 @@ fun ReportsScreen(
     uiState.deleteConfirmFile?.let { file ->
         AlertDialog(
             onDismissRequest = { reportsViewModel.dismissDeleteConfirm() },
-            icon = { Icon(Icons.Filled.DeleteForever, null, tint = Color(0xFFD32F2F)) },
+            icon = { Icon(Icons.Filled.DeleteForever, null, tint = MaterialTheme.colorScheme.error) },
             title = {
                 Text(
                     text = if (language == "en") "Delete File?" else "Hapus File?",
@@ -94,7 +98,7 @@ fun ReportsScreen(
             confirmButton = {
                 Button(
                     onClick = { reportsViewModel.deleteFile(context, file) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     enabled = !uiState.isDeleting
                 ) {
                     if (uiState.isDeleting) {
@@ -150,7 +154,7 @@ fun ReportsScreen(
                 text = stringResource(AppStrings.DiagnosisReports),
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
-                color = TextPrimary
+                color = textPrimaryColor
             )
 
             // View toggle
@@ -173,7 +177,7 @@ fun ReportsScreen(
                         Icon(
                             Icons.Filled.ViewList,
                             contentDescription = "List",
-                            tint = if (!uiState.isGridView) Color.White else TextSecondary,
+                            tint = if (!uiState.isGridView) Color.White else textSecondaryColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -191,7 +195,7 @@ fun ReportsScreen(
                         Icon(
                             Icons.Filled.GridView,
                             contentDescription = "Grid",
-                            tint = if (uiState.isGridView) Color.White else TextSecondary,
+                            tint = if (uiState.isGridView) Color.White else textSecondaryColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -231,14 +235,14 @@ fun ReportsScreen(
                     Text(
                         text = if (language == "en") "Storage Used" else "Penyimpanan Digunakan",
                         fontSize = 13.sp,
-                        color = TextSecondary
+                        color = textSecondaryColor
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = uiState.storageInfo.totalSizeFormatted,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
-                        color = TextPrimary
+                        color = textPrimaryColor
                     )
                 }
                 Surface(
@@ -275,7 +279,7 @@ fun ReportsScreen(
                         Text(
                             text = stringResource(AppStrings.Loading),
                             fontSize = 14.sp,
-                            color = TextSecondary
+                            color = textSecondaryColor
                         )
                     }
                 }
@@ -292,7 +296,7 @@ fun ReportsScreen(
                         Icon(
                             Icons.Filled.FolderOpen,
                             contentDescription = null,
-                            tint = TextSecondary.copy(alpha = 0.4f),
+                            tint = textSecondaryColor.copy(alpha = 0.4f),
                             modifier = Modifier.size(64.dp)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
@@ -300,7 +304,7 @@ fun ReportsScreen(
                             text = stringResource(AppStrings.NoReports),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
-                            color = TextSecondary
+                            color = textSecondaryColor
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -309,7 +313,7 @@ fun ReportsScreen(
                             else
                                 "Laporan PDF dari diagnosa kuesioner akan muncul di sini",
                             fontSize = 13.sp,
-                            color = TextSecondary.copy(alpha = 0.7f),
+                            color = textSecondaryColor.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(horizontal = 32.dp)
                         )
@@ -366,7 +370,7 @@ fun ReportsScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
-                color = Color(0xFFFDEDED)
+                color = MaterialTheme.colorScheme.errorContainer
             ) {
                 Row(
                     modifier = Modifier.padding(12.dp),
@@ -375,14 +379,14 @@ fun ReportsScreen(
                     Icon(
                         Icons.Filled.ErrorOutline,
                         contentDescription = null,
-                        tint = Color(0xFFD32F2F),
+                        tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = error,
                         fontSize = 13.sp,
-                        color = Color(0xFFD32F2F),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -402,6 +406,10 @@ fun PdfListItem(
     onShare: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val textPrimaryColor = MaterialTheme.colorScheme.onSurface
+    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val pdfRedColor = Color(0xFFD32F2F)
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -419,13 +427,13 @@ fun PdfListItem(
                 modifier = Modifier
                     .size(46.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFFD32F2F).copy(alpha = 0.1f)),
+                    .background(pdfRedColor.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Filled.PictureAsPdf,
                     contentDescription = null,
-                    tint = Color(0xFFD32F2F),
+                    tint = pdfRedColor,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -437,7 +445,7 @@ fun PdfListItem(
                     text = "${file.name}.pdf",
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp,
-                    color = TextPrimary,
+                    color = textPrimaryColor,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -446,17 +454,17 @@ fun PdfListItem(
                     Text(
                         text = file.sizeFormatted,
                         fontSize = 12.sp,
-                        color = TextSecondary
+                        color = textSecondaryColor
                     )
                     Text(
                         text = "  •  ",
                         fontSize = 12.sp,
-                        color = TextSecondary.copy(alpha = 0.5f)
+                        color = textSecondaryColor.copy(alpha = 0.5f)
                     )
                     Text(
                         text = file.lastModifiedFormatted,
                         fontSize = 12.sp,
-                        color = TextSecondary
+                        color = textSecondaryColor
                     )
                 }
             }
@@ -474,7 +482,7 @@ fun PdfListItem(
                 Icon(
                     Icons.Filled.DeleteOutline,
                     contentDescription = stringResource(AppStrings.Delete),
-                    tint = Color(0xFFD32F2F),
+                    tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -493,6 +501,10 @@ fun PdfGridItem(
     onShare: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val textPrimaryColor = MaterialTheme.colorScheme.onSurface
+    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val pdfRedColor = Color(0xFFD32F2F)
+
     // Load thumbnail
     val context = LocalContext.current
     var thumbnail by remember(file.file.absolutePath) { mutableStateOf<Bitmap?>(null) }
@@ -518,7 +530,7 @@ fun PdfGridItem(
                     .fillMaxWidth()
                     .height(140.dp)
                     .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
-                    .background(Color(0xFFF5F5F5)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 if (thumbnail != null) {
@@ -533,14 +545,14 @@ fun PdfGridItem(
                         Icon(
                             Icons.Filled.PictureAsPdf,
                             contentDescription = null,
-                            tint = Color(0xFFD32F2F).copy(alpha = 0.5f),
+                            tint = pdfRedColor.copy(alpha = 0.5f),
                             modifier = Modifier.size(40.dp)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "PDF",
                             fontSize = 12.sp,
-                            color = TextSecondary,
+                            color = textSecondaryColor,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -552,7 +564,7 @@ fun PdfGridItem(
                     text = "${file.name}.pdf",
                     fontWeight = FontWeight.Medium,
                     fontSize = 13.sp,
-                    color = TextPrimary,
+                    color = textPrimaryColor,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     lineHeight = 16.sp
@@ -561,7 +573,7 @@ fun PdfGridItem(
                 Text(
                     text = "${file.sizeFormatted} • ${file.lastModifiedFormatted}",
                     fontSize = 11.sp,
-                    color = TextSecondary,
+                    color = textSecondaryColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -581,7 +593,7 @@ fun PdfGridItem(
                         Icon(
                             Icons.Filled.DeleteOutline,
                             contentDescription = null,
-                            tint = Color(0xFFD32F2F),
+                            tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -602,6 +614,9 @@ fun PdfPreviewDialog(
     onDismiss: () -> Unit,
     onShare: () -> Unit
 ) {
+    val textPrimaryColor = MaterialTheme.colorScheme.onSurface
+    val textSecondaryColor = MaterialTheme.colorScheme.onSurfaceVariant
+
     var pages by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var totalPages by remember { mutableIntStateOf(0) }
@@ -645,7 +660,7 @@ fun PdfPreviewDialog(
                                 Text(
                                     text = "$totalPages ${if (language == "en") "pages" else "halaman"} • ${file.sizeFormatted}",
                                     fontSize = 12.sp,
-                                    color = TextSecondary
+                                    color = textSecondaryColor
                                 )
                             }
                         }
@@ -681,7 +696,7 @@ fun PdfPreviewDialog(
                             Text(
                                 text = if (language == "en") "Rendering PDF..." else "Memuat PDF...",
                                 fontSize = 14.sp,
-                                color = TextSecondary
+                                color = textSecondaryColor
                             )
                         }
                     }
@@ -698,7 +713,7 @@ fun PdfPreviewDialog(
                             Icon(
                                 Icons.Filled.ErrorOutline,
                                 contentDescription = null,
-                                tint = Color(0xFFD32F2F),
+                                tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(48.dp)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
@@ -706,13 +721,13 @@ fun PdfPreviewDialog(
                                 text = if (language == "en") "Failed to load PDF"
                                 else "Gagal memuat PDF",
                                 fontWeight = FontWeight.Medium,
-                                color = TextPrimary
+                                color = textPrimaryColor
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = errorMsg ?: "",
                                 fontSize = 13.sp,
-                                color = TextSecondary,
+                                color = textSecondaryColor,
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -724,7 +739,7 @@ fun PdfPreviewDialog(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
-                            .background(Color(0xFFE0E0E0)),
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(12.dp)
@@ -735,7 +750,7 @@ fun PdfPreviewDialog(
                                 Text(
                                     text = "${if (language == "en") "Page" else "Hal."} ${index + 1} / $totalPages",
                                     fontSize = 11.sp,
-                                    color = TextSecondary,
+                                    color = textSecondaryColor,
                                     modifier = Modifier.padding(bottom = 4.dp)
                                 )
                                 // Page image
