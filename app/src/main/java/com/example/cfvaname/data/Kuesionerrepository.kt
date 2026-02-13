@@ -5,7 +5,7 @@ import io.github.jan.supabase.postgrest.query.Order
 
 /**
  * Repository untuk tabel kuesioners dan kuesioner_data di Supabase
- * PERUBAHAN: kuesioner_data sekarang merujuk ke gejala_hipotesis_id (bukan gejala_id)
+ * ✅ PERBAIKAN: countKuesionerData() sekarang menghitung gejala UNIK (bukan total entries)
  */
 class KuesionerRepository {
 
@@ -67,12 +67,37 @@ class KuesionerRepository {
         }
     }
 
+    /**
+     * ✅ PERBAIKAN: Hitung GEJALA UNIK yang dipilih
+     * 
+     * Sebelumnya:
+     *   - 30 gejala → 39 entries di kuesioner_data (duplikasi)
+     *   - countKuesionerData() return 39
+     * 
+     * Sekarang:
+     *   - 30 gejala → 30 entries di kuesioner_data (representative saja)
+     *   - countKuesionerData() return 30 (akurat!)
+     * 
+     * Jika ada old data dengan duplikasi, method ini akan count unique gejalaId
+     * sehingga tetap menampilkan 30 (bukan 39)
+     */
     suspend fun countKuesionerData(kuesionerId: Long): Int {
         return try {
             val result = client.postgrest.from("kuesioner_data")
                 .select { filter { eq("kuesioner_id", kuesionerId) } }
                 .decodeList<KuesionerData>()
-            result.size
+            
+            // ✅ PERBAIKAN: Hitung unique gejala_hipotesis_id
+            // Untuk old data: jika ada duplikasi, kita map ke gejalaId yang unik
+            val ghMap = getAllGejalaHipotesis().getOrDefault(emptyList())
+                .associateBy { it.id }
+            
+            val uniqueGejalaIds = result.mapNotNull { data ->
+                // Get gejalaHipotesis dari id
+                ghMap[data.gejalaHipotesisId]?.gejalaId
+            }.toSet() // Convert to Set untuk unique
+            
+            uniqueGejalaIds.size
         } catch (e: Exception) {
             0
         }
@@ -132,4 +157,4 @@ class KuesionerRepository {
             Result.failure(Exception("Gagal memuat nilai CF: ${e.localizedMessage}"))
         }
     }
-}
+} 

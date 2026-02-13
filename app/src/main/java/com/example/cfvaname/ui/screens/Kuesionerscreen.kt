@@ -200,7 +200,7 @@ fun KuesionerSummaryCard(no: Int, summary: KuesionerSummary, onLihatHasil: () ->
 }
 
 // ======================================================================
-// 2. CREATE FORM SCREEN - Now groups gejala by hipotesis via gejala_hipotesis
+// 2. CREATE FORM SCREEN - ✅ FIXED: Groups gejala by hipotesis, smart shared
 // ======================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -208,8 +208,9 @@ fun KuesionerCreateForm(padding: PaddingValues, vm: KuesionerViewModel) {
     val uiState by vm.uiState.collectAsState()
     val scrollState = rememberScrollState()
 
-    // Build grouped data: hipotesis -> list of (GejalaHipotesis, Gejala)
+    // ✅ PERBAIKAN: Group gejala_hipotesis by gejalaId untuk smart handling
     val gejalaMap = uiState.gejalaList.associateBy { it.id }
+    val ghByGejalaId = uiState.gejalaHipotesisList.groupBy { it.gejalaId }
     val grouped = uiState.gejalaHipotesisList.groupBy { it.hipotesisId }
 
     Column(Modifier.fillMaxSize().padding(padding).verticalScroll(scrollState)) {
@@ -237,7 +238,7 @@ fun KuesionerCreateForm(padding: PaddingValues, vm: KuesionerViewModel) {
 
         Spacer(Modifier.height(16.dp))
 
-        // Gejala grouped by hipotesis (via gejala_hipotesis pivot)
+        // ✅ Gejala grouped by hipotesis dengan smart shared handling
         Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
             Column(Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -259,13 +260,17 @@ fun KuesionerCreateForm(padding: PaddingValues, vm: KuesionerViewModel) {
                             ghItems.forEachIndexed { index, gh ->
                                 val gejala = gejalaMap[gh.gejalaId]
                                 if (gejala != null) {
+                                    // ✅ PERBAIKAN: Cek apakah gejala ini sudah dipilih
+                                    val isAlreadySelected = uiState.selectedGejalaCf.containsKey(gejala.id)
+                                    
                                     GejalaSelectItem(
                                         gejala = gejala,
-                                        gejalaHipotesisId = gh.id,
+                                        gejalaId = gejala.id,
                                         nilaiCfList = uiState.nilaiCfList,
-                                        selectedCfId = uiState.selectedGejalaCf[gh.id],
+                                        selectedCfId = uiState.selectedGejalaCf[gejala.id],
                                         enabled = !uiState.isSaving,
-                                        onSelect = { cfId -> vm.toggleGejala(gh.id, cfId) }
+                                        isAlreadySelectedInOtherHipotesis = isAlreadySelected && ghItems.indexOf(gh) > 0,
+                                        onSelect = { cfId -> vm.toggleGejala(gejala.id, cfId) }
                                     )
                                     if (index < ghItems.size - 1) {
                                         HorizontalDivider(
@@ -322,16 +327,19 @@ fun KuesionerCreateForm(padding: PaddingValues, vm: KuesionerViewModel) {
 }
 
 /**
- * Item pemilihan gejala - sekarang menerima gejalaHipotesisId sebagai key
+ * ✅ PERBAIKAN: Item pemilihan gejala dengan support shared gejala
+ * - Accept gejalaId (bukan gejalaHipotesisId)
+ * - Display "Shared" badge jika gejala sudah dipilih di hipotesis lain
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GejalaSelectItem(
     gejala: Gejala,
-    gejalaHipotesisId: Long,
+    gejalaId: Long,
     nilaiCfList: List<NilaiCf>,
     selectedCfId: Long?,
     enabled: Boolean,
+    isAlreadySelectedInOtherHipotesis: Boolean = false,
     onSelect: (Long) -> Unit
 ) {
     val isSelected = selectedCfId != null && selectedCfId != 0L
@@ -350,9 +358,22 @@ fun GejalaSelectItem(
         Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Surface(shape = RoundedCornerShape(6.dp), color = VenamePrimary.copy(0.12f)) {
-            Text(gejala.kode, color = VenamePrimary, fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Surface(shape = RoundedCornerShape(6.dp), color = VenamePrimary.copy(0.12f)) {
+                Text(gejala.kode, color = VenamePrimary, fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+            }
+            // ✅ Badge untuk gejala yang sudah dipilih di hipotesis lain
+            if (isAlreadySelectedInOtherHipotesis && isSelected) {
+                Surface(shape = RoundedCornerShape(6.dp), color = StatusSuccess.copy(0.15f)) {
+                    Row(Modifier.padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.CheckCircle, null, tint = StatusSuccess, modifier = Modifier.size(12.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Shared", color = StatusSuccess, fontWeight = FontWeight.Bold, fontSize = 9.sp)
+                    }
+                }
+            }
         }
+        
         Text(gejala.nama, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, lineHeight = 18.sp, modifier = Modifier.fillMaxWidth())
 
         ExposedDropdownMenuBox(expanded = dropdownExpanded, onExpandedChange = { dropdownExpanded = it && enabled }, modifier = Modifier.fillMaxWidth()) {
@@ -446,12 +467,12 @@ fun KuesionerHasilScreen(padding: PaddingValues, vm: KuesionerViewModel) {
         }
         Spacer(Modifier.height(12.dp))
 
-        // Gejala yang dipilih - resolve via gejala_hipotesis
+        // ✅ Gejala yang dipilih - resolve via gejala_hipotesis dan gejalaId
         Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
             Column(Modifier.padding(16.dp)) {
                 Text(stringResource(AppStrings.SelectedSymptoms), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = VenamePrimary)
                 Spacer(Modifier.height(8.dp))
-                uiState.hasilKuesionerDataList.forEach { data ->
+                uiState.hasilKuesionerDataList.forEachIndexed { idx, data ->
                     val gh = uiState.allGejalaHipotesisMap[data.gejalaHipotesisId]
                     val gejala = if (gh != null) uiState.allGejalaMap[gh.gejalaId] else null
                     val nilaiCf = uiState.allNilaiCfMap[data.cfValue]
@@ -461,7 +482,7 @@ fun KuesionerHasilScreen(padding: PaddingValues, vm: KuesionerViewModel) {
                         Text(gejala?.nama ?: "-", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text("${nilaiCf?.keterangan ?: "-"} (${String.format("%.2f", nilaiCf?.nilai ?: 0.0)})", fontSize = 11.sp, color = VenameSecondary)
                     }
-                    if (data != uiState.hasilKuesionerDataList.last()) HorizontalDivider(Modifier.padding(vertical = 2.dp), color = MaterialTheme.colorScheme.onSurface.copy(0.1f))
+                    if (idx < uiState.hasilKuesionerDataList.size - 1) HorizontalDivider(Modifier.padding(vertical = 2.dp), color = MaterialTheme.colorScheme.onSurface.copy(0.1f))
                 }
             }
         }
@@ -566,13 +587,9 @@ fun InfoRow(label: String, value: String) {
 }
 
 // ======================================================================
-// 4. PDF EXPORT - Professional & Responsive
+// 4. PDF EXPORT (Tanpa perubahan - sudah di file asli)
 // ======================================================================
 
-/**
- * Helper class for building beautiful, responsive PDF documents
- * with proper text wrapping, pagination, and consistent styling.
- */
 private class PdfBuilder(private val context: Context) {
 
     val doc = PdfDocument()
@@ -592,7 +609,6 @@ private class PdfBuilder(private val context: Context) {
     var canvas = page.canvas
         private set
 
-    // Color palette
     object Colors {
         val primary = android.graphics.Color.parseColor("#1A73E8")
         val primaryDark = android.graphics.Color.parseColor("#0D47A1")
@@ -616,14 +632,12 @@ private class PdfBuilder(private val context: Context) {
         val tableRowAlt = android.graphics.Color.parseColor("#F5F5F5")
     }
 
-    // Paint presets
     private val paint = Paint().apply { isAntiAlias = true }
     private val fillPaint = Paint().apply { isAntiAlias = true; style = Paint.Style.FILL }
     private val strokePaint = Paint().apply {
         isAntiAlias = true; style = Paint.Style.STROKE; strokeWidth = 1f
     }
 
-    // ---- Text wrapping ----
     fun wrapText(text: String, textSize: Float, maxWidth: Float, bold: Boolean = false): List<String> {
         paint.textSize = textSize
         paint.isFakeBoldText = bold
@@ -675,7 +689,6 @@ private class PdfBuilder(private val context: Context) {
         return totalHeight
     }
 
-    // ---- Pagination ----
     fun ensureSpace(needed: Float) {
         if (y + needed > pageHeight - marginBottom) {
             drawPageFooter()
@@ -709,7 +722,6 @@ private class PdfBuilder(private val context: Context) {
         canvas.drawLine(marginLeft, footerY - 10f, pageWidth - marginRight, footerY - 10f, strokePaint)
     }
 
-    // ---- Drawing Helpers ----
     fun drawRoundedRect(left: Float, top: Float, right: Float, bottom: Float, radius: Float, color: Int) {
         fillPaint.color = color
         val rectF = android.graphics.RectF(left, top, right, bottom)
@@ -732,7 +744,6 @@ private class PdfBuilder(private val context: Context) {
 
     fun space(amount: Float) { y += amount }
 
-    // ---- Section Components ----
     fun drawDocumentHeader(title: String, subtitle: String) {
         val bannerHeight = 70f
         drawRoundedRect(marginLeft, y, pageWidth - marginRight, y + bannerHeight, 8f, Colors.headerBg)

@@ -34,9 +34,10 @@ data class KuesionerUiState(
     val hipotesisList: List<Hipotesis> = emptyList(),
     val gejalaHipotesisList: List<GejalaHipotesis> = emptyList(),
     val nilaiCfList: List<NilaiCf> = emptyList(),
-    // Gejala selection: gejalaHipotesisId -> nilaiCfId
+    // ✅ PERBAIKAN: Key adalah gejalaId, bukan gejalaHipotesisId
+    // Map: gejalaId -> nilaiCfId (unique per gejala di seluruh hipotesis)
     val selectedGejalaCf: Map<Long, Long> = emptyMap(),
-    // Hasil/Result screen
+    // Hasil screen
     val showHasil: Boolean = false,
     val hasilKuesioner: Kuesioner? = null,
     val hasilResults: List<HipotesisResult> = emptyList(),
@@ -107,21 +108,22 @@ class KuesionerViewModel : ViewModel() {
     fun onFormUsiaUdangChange(v: String) { _uiState.value = _uiState.value.copy(formUsiaUdang = v, formError = null) }
 
     /**
-     * Toggle gejala selection via gejala_hipotesis pivot ID
+     * ✅ PERBAIKAN: Toggle gejala berdasarkan gejalaId
+     * Jika user pilih gejala di hipotesis A, otomatis apply ke semua hipotesis yang punya gejala itu
      */
-    fun toggleGejala(gejalaHipotesisId: Long, nilaiCfId: Long) {
+    fun toggleGejala(gejalaId: Long, nilaiCfId: Long) {
         val map = _uiState.value.selectedGejalaCf.toMutableMap()
         if (nilaiCfId == 0L) {
-            map.remove(gejalaHipotesisId)
+            map.remove(gejalaId)
         } else {
-            map[gejalaHipotesisId] = nilaiCfId
+            map[gejalaId] = nilaiCfId
         }
         _uiState.value = _uiState.value.copy(selectedGejalaCf = map, formError = null)
     }
 
-    fun removeGejala(gejalaHipotesisId: Long) {
+    fun removeGejala(gejalaId: Long) {
         val map = _uiState.value.selectedGejalaCf.toMutableMap()
-        map.remove(gejalaHipotesisId)
+        map.remove(gejalaId)
         _uiState.value = _uiState.value.copy(selectedGejalaCf = map)
     }
 
@@ -146,14 +148,23 @@ class KuesionerViewModel : ViewModel() {
 
             repo.insertKuesioner(kuesionerReq).fold(
                 onSuccess = { kuesioner ->
-                    // Insert kuesioner_data dengan gejala_hipotesis_id
-                    val dataList = s.selectedGejalaCf.map { (ghId, cfId) ->
-                        KuesionerDataInsertRequest(
-                            kuesionerId = kuesioner.id,
-                            gejalaHipotesisId = ghId,
-                            cfValue = cfId
-                        )
+                    // ✅ PERBAIKAN: Insert kuesioner_data dengan representasi minimal
+                    // Untuk setiap gejalaId yang dipilih, insert 1 entry dengan gejalaHipotesisId pertama
+                    val ghMap = s.gejalaHipotesisList.groupBy { it.gejalaId }
+                    val dataList = s.selectedGejalaCf.mapNotNull { (gejalaId, cfId) ->
+                        // Ambil gejalaHipotesis pertama untuk gejala ini
+                        val firstGh = ghMap[gejalaId]?.firstOrNull()
+                        if (firstGh != null) {
+                            KuesionerDataInsertRequest(
+                                kuesionerId = kuesioner.id,
+                                gejalaHipotesisId = firstGh.id,
+                                cfValue = cfId
+                            )
+                        } else {
+                            null
+                        }
                     }
+
                     repo.insertKuesionerData(dataList).fold(
                         onSuccess = {
                             _uiState.value = _uiState.value.copy(
@@ -198,34 +209,54 @@ class KuesionerViewModel : ViewModel() {
             val nilaiCfMap = nilaiCfList.associateBy { it.id }
             val gejalaMap = gejalaList.associateBy { it.id }
             val ghMap = ghList.associateBy { it.id }
+            
+            // ✅ PERBAIKAN: Map gejalaId -> list of gejalaHipotesis (untuk akses cepat)
+            val ghByGejalaId = ghList.groupBy { it.gejalaId }
+            
+            // ✅ PERBAIKAN: Map gejalaId -> nilaiCfId dari kuesioner (dari gejalaHipotesisId)
+            val gejalaIdToCfId = mutableMapOf<Long, Long>()
+            for (data in kuesionerDataList) {
+                val gh = ghMap[data.gejalaHipotesisId]
+                if (gh != null) {
+                    gejalaIdToCfId[gh.gejalaId] = data.cfValue
+                }
+            }
 
             // CF Calculation per hipotesis
             val results = mutableListOf<HipotesisResult>()
 
             for (hipotesis in hipotesisList) {
-                // Semua gejala_hipotesis untuk hipotesis ini
+                // ✅ PERBAIKAN: Semua gejala_hipotesis untuk hipotesis ini
                 val ghForHipotesis = ghList.filter { it.hipotesisId == hipotesis.id }
 
                 var cfCombine = 0.0
                 var prevCF = 0.0
                 var count = 0
                 val steps = mutableListOf<CfCalculationStep>()
+                val processedGejalaIds = mutableSetOf<Long>() // Hindari double-count
 
                 for (gh in ghForHipotesis) {
-                    val gejala = gejalaMap[gh.gejalaId] ?: continue
+                    val gejalaId = gh.gejalaId
+                    val gejala = gejalaMap[gejalaId] ?: continue
 
-                    // Apakah user memilih gejala_hipotesis ini?
-                    val selected = kuesionerDataList.find { it.gejalaHipotesisId == gh.id } ?: continue
+                    // ✅ Skip jika gejala ini sudah diproses untuk hipotesis ini
+                    if (processedGejalaIds.contains(gejalaId)) continue
 
-                    // CF Pakar: dari rules (gejala_hipotesis -> nilaiCf)
+                    // Apakah user memilih gejala ini?
+                    val cfUser = gejalaIdToCfId[gejalaId]
+                    if (cfUser == null || cfUser == 0L) continue // User tidak pilih gejala ini
+
+                    processedGejalaIds.add(gejalaId)
+
+                    // CF Pakar: dari rules dengan gejalaHipotesisId = gh.id
                     val rule = rulesList.find { it.gejalaHipotesisId == gh.id }
                     val cfPakar = if (rule != null) nilaiCfMap[rule.cfId]?.nilai ?: 0.0 else 0.0
 
-                    // CF User: dari kuesioner_data.cf_value -> nilaiCf
-                    val cfUser = nilaiCfMap[selected.cfValue]?.nilai ?: 0.0
+                    // CF User: dari map
+                    val cfUserValue = nilaiCfMap[cfUser]?.nilai ?: 0.0
 
                     // CF Gejala = CF Pakar x CF User
-                    val cfGejala = cfPakar * cfUser
+                    val cfGejala = cfPakar * cfUserValue
 
                     val cfSebelum = prevCF
                     val cfSesudah: Double
@@ -241,7 +272,7 @@ class KuesionerViewModel : ViewModel() {
                     steps.add(
                         CfCalculationStep(
                             gejalaKode = gejala.kode, gejalaNama = gejala.nama,
-                            cfPakar = cfPakar, cfUser = cfUser, cfGejala = cfGejala,
+                            cfPakar = cfPakar, cfUser = cfUserValue, cfGejala = cfGejala,
                             cfSebelum = cfSebelum, cfSesudah = cfSesudah
                         )
                     )
