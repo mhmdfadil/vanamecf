@@ -238,20 +238,50 @@ sealed class AppStrings(val id: String, val en: String) {
     // ===================================================
     // ABOUT
     // ===================================================
-    object AppName : AppStrings("Sistem Cerdas Vaname", "Vaname Smart System")
+    object AppName : AppStrings("Sistem Pakar Vaname", "Vaname Expert System")
     object AboutApp : AppStrings("Tentang Aplikasi", "About Application")
-    object AppVersion : AppStrings("Versi Aplikasi", "Application Version")
+    object AppVersion : AppStrings("Versi", "Version")
     object Developer : AppStrings("Pengembang", "Developer")
     object DeveloperTeam : AppStrings("Development Team 2026", "Development Team 2026")
     object AppDescription : AppStrings(
-        "Sistem Cerdas Vaname adalah platform pengelolaan data dan monitoring yang dirancang untuk membantu organisasi dalam mengoptimalkan proses bisnis secara real-time dengan teknologi terkini.",
-        "Vaname Smart System is a data management and monitoring platform designed to help organizations optimize business processes in real-time with the latest technology."
+        "Sistem Pakar Diagnosis Penyakit Pada Udang Vaname (Litopenaeus vannamei) dengan penerapan metode Certainty Factor di Kecamatan Jangka. Aplikasi ini dirancang untuk membantu para petambak dalam mendiagnosa penyakit udang vaname secara cepat dan akurat berdasarkan gejala yang dialami, serta memberikan rekomendasi penanganan yang tepat.",
+        "Expert System for Diagnosis of Diseases in Vaname Shrimp (Litopenaeus vannamei) using the Certainty Factor method in Jangka District. This application is designed to help shrimp farmers diagnose vaname shrimp diseases quickly and accurately based on observed symptoms, and provide appropriate treatment recommendations."
     )
     object Technology : AppStrings("Teknologi", "Technology")
-    object Copyright : AppStrings("© 2026 Sistem Cerdas Vaname", "© 2026 Vaname Smart System")
+    object Copyright : AppStrings("© 2026 Sistem Pakar Vaname — Kecamatan Jangka", "© 2026 Vaname Expert System — Jangka District")
     object TermsAndConditions : AppStrings("Syarat dan Ketentuan", "Terms and Conditions")
     object PrivacyPolicy : AppStrings("Kebijakan Privasi", "Privacy Policy")
-    
+
+    // About - Expert / Pakar
+    object ExpertInfo : AppStrings("Pakar / Narasumber", "Expert / Resource Person")
+    object ExpertPhoto : AppStrings("Foto Pakar", "Expert Photo")
+    object ExpertTitle : AppStrings("Pakar Perikanan Budidaya Udang Vaname", "Vaname Shrimp Aquaculture Expert")
+    object ExpertDescription : AppStrings(
+        "Fitriani, S.Pi merupakan pakar di bidang perikanan yang menjadi narasumber utama dalam penelitian ini. Beliau memiliki pengetahuan dan pengalaman luas dalam budidaya udang vaname serta penanganan penyakit di Kecamatan Jangka. Data pengetahuan pakar berupa bobot kepercayaan (CF pakar) terhadap hubungan gejala dan penyakit menjadi dasar inferensi pada sistem ini.",
+        "Fitriani, S.Pi is a fisheries expert who serves as the primary resource person in this research. She has extensive knowledge and experience in vaname shrimp aquaculture and disease management in Jangka District. The expert knowledge data in the form of certainty factor weights (CF expert) for symptom-disease relationships forms the basis of inference in this system."
+    )
+
+    // About - CF Method
+    object CfMethodTitle : AppStrings("Metode Certainty Factor", "Certainty Factor Method")
+    object CfMethodDescription : AppStrings(
+        "Metode Certainty Factor (CF) digunakan untuk mengukur tingkat keyakinan seorang pakar terhadap suatu hipotesis berdasarkan gejala yang diamati. Nilai CF berkisar antara 0.0 (tidak yakin) hingga 1.0 (sangat yakin). Metode ini menggabungkan bobot keyakinan pakar (CF pakar) dengan tingkat keyakinan pengguna (CF user) untuk menghasilkan nilai kepastian akhir melalui proses combine secara berurutan.",
+        "The Certainty Factor (CF) method is used to measure an expert's level of confidence in a hypothesis based on observed symptoms. CF values range from 0.0 (uncertain) to 1.0 (very certain). This method combines expert confidence weights (CF expert) with user confidence levels (CF user) to produce a final certainty value through sequential combining process."
+    )
+
+    // About - Research Info
+    object ResearchInfo : AppStrings("Informasi Penelitian", "Research Information")
+    object ResearchTitleLabel : AppStrings("Judul", "Title")
+    object ResearchTitleValue : AppStrings(
+        "Sistem Pakar Diagnosis Penyakit Pada Udang Vaname Dengan Penerapan Certainty Factor di Kecamatan Jangka",
+        "Expert System for Vaname Shrimp Disease Diagnosis Using Certainty Factor in Jangka District"
+    )
+    object ResearchLocationLabel : AppStrings("Lokasi", "Location")
+    object ResearchLocationValue : AppStrings("Kecamatan Jangka", "Jangka District")
+    object ResearchDiseaseCountLabel : AppStrings("Jumlah Penyakit", "Disease Count")
+    object ResearchDiseaseCountValue : AppStrings("13 penyakit udang vaname", "13 vaname shrimp diseases")
+    object ResearchSymptomCountLabel : AppStrings("Jumlah Gejala", "Symptom Count")
+    object ResearchSymptomCountValue : AppStrings("30 gejala", "30 symptoms")
+
     // ===================================================
     // COMMON ACTIONS
     // ===================================================
