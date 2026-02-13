@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -55,12 +56,24 @@ private val SkyBlueMedium = Color(0xFF4AADE8)
 private val SkyBlueDark = Color(0xFF2196F3)
 private val SkyBlueDeep = Color(0xFF1976D2)
 private val SkyBlueAccent = Color(0xFF03A9F4)
-private val NavbarStart = Color(0xFF1565C0)
-private val NavbarEnd = Color(0xFF42A5F5)
-private val SidebarGradientStart = Color(0xFF2196F3)
-private val SidebarGradientEnd = Color(0xFF64B5F6)
-private val BottomNavBg = Color(0xFFFCFDFF)
-private val BottomNavSelected = Color(0xFF1E88E5)
+
+// Light mode navbar
+private val NavbarStartLight = Color(0xFF1565C0)
+private val NavbarEndLight = Color(0xFF42A5F5)
+
+// Dark mode navbar - lebih gelap & subtle
+private val NavbarStartDark = Color(0xFF0D47A1)
+private val NavbarEndDark = Color(0xFF1565C0)
+
+// Sidebar gradient
+private val SidebarGradientStartLight = Color(0xFF2196F3)
+private val SidebarGradientEndLight = Color(0xFF64B5F6)
+private val SidebarGradientStartDark = Color(0xFF0D47A1)
+private val SidebarGradientEndDark = Color(0xFF1565C0)
+
+// Bottom nav selected
+private val BottomNavSelectedLight = Color(0xFF1E88E5)
+private val BottomNavSelectedDark = Color(0xFF64B5F6)
 
 // ════════════════════════════════════════════════════════════════
 //  FILE-LEVEL DATA CLASS FOR BOTTOM NAV
@@ -90,6 +103,7 @@ fun AppScaffold(
 ) {
     var isSidebarOpen by remember { mutableStateOf(false) }
     val sidebarWidth = 300.dp
+    val isDark = isSystemInDarkTheme()
 
     val sidebarOffset by animateDpAsState(
         targetValue = if (isSidebarOpen) 0.dp else (-sidebarWidth),
@@ -118,7 +132,7 @@ fun AppScaffold(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF0F4F8))
+            .background(MaterialTheme.colorScheme.background)
             .pointerInput(Unit) {
                 detectHorizontalDragGestures { _, dragAmount ->
                     if (dragAmount > 30 && !isSidebarOpen) {
@@ -220,7 +234,7 @@ fun AppScaffold(
 }
 
 // ════════════════════════════════════════════════════════════════
-//  PREMIUM TOP NAVBAR (Sky Blue, tanpa notification)
+//  PREMIUM TOP NAVBAR (Sky Blue, theme-aware)
 // ════════════════════════════════════════════════════════════════
 @Composable
 fun PremiumTopNavbar(
@@ -228,6 +242,10 @@ fun PremiumTopNavbar(
     onMenuClick: () -> Unit,
     userSession: UserSession?
 ) {
+    val isDark = isSystemInDarkTheme()
+    val navbarStart = if (isDark) NavbarStartDark else NavbarStartLight
+    val navbarEnd = if (isDark) NavbarEndDark else NavbarEndLight
+
     val infiniteTransition = rememberInfiniteTransition(label = "navbarGlow")
     val glowAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
@@ -244,7 +262,7 @@ fun PremiumTopNavbar(
             .fillMaxWidth()
             .background(
                 Brush.horizontalGradient(
-                    colors = listOf(NavbarStart, NavbarEnd)
+                    colors = listOf(navbarStart, navbarEnd)
                 )
             )
             .drawBehind {
@@ -355,7 +373,7 @@ fun PremiumTopNavbar(
 }
 
 // ════════════════════════════════════════════════════════════════
-//  PREMIUM SIDEBAR DRAWER (Sky Blue)
+//  PREMIUM SIDEBAR DRAWER (Sky Blue, theme-aware)
 // ════════════════════════════════════════════════════════════════
 @Composable
 fun PremiumSidebarDrawer(
@@ -368,6 +386,10 @@ fun PremiumSidebarDrawer(
     onLogout: () -> Unit,
     onClose: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
+    val sidebarGradientStart = if (isDark) SidebarGradientStartDark else SidebarGradientStartLight
+    val sidebarGradientEnd = if (isDark) SidebarGradientEndDark else SidebarGradientEndLight
+
     Box(
         modifier = Modifier
             .fillMaxHeight()
@@ -392,7 +414,7 @@ fun PremiumSidebarDrawer(
                     .fillMaxWidth()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(SidebarGradientStart, SidebarGradientEnd)
+                            colors = listOf(sidebarGradientStart, sidebarGradientEnd)
                         )
                     )
                     .drawBehind {
@@ -537,7 +559,7 @@ fun PremiumSidebarDrawer(
             }
 
             // ── LOGOUT ──
-            Divider(
+            HorizontalDivider(
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f),
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
@@ -554,20 +576,20 @@ fun PremiumSidebarDrawer(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(StatusError.copy(alpha = 0.1f)),
+                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.Filled.Logout,
                         contentDescription = stringResource(AppStrings.Logout),
-                        tint = StatusError,
+                        tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(20.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(14.dp))
                 Text(
                     text = stringResource(AppStrings.Logout),
-                    color = StatusError,
+                    color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp
                 )
@@ -584,11 +606,15 @@ fun PremiumSidebarItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
+    val sidebarGradientStart = if (isDark) SidebarGradientStartDark else SidebarGradientStartLight
+    val sidebarGradientEnd = if (isDark) SidebarGradientEndDark else SidebarGradientEndLight
+
     val bgBrush = if (isSelected) {
         Brush.horizontalGradient(
             colors = listOf(
-                SkyBlueDark.copy(alpha = 0.12f),
-                SkyBlueMedium.copy(alpha = 0.05f)
+                SkyBlueDark.copy(alpha = if (isDark) 0.20f else 0.12f),
+                SkyBlueMedium.copy(alpha = if (isDark) 0.10f else 0.05f)
             )
         )
     } else {
@@ -597,8 +623,10 @@ fun PremiumSidebarItem(
         )
     }
 
-    val textColor = if (isSelected) SkyBlueDeep else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
-    val iconColor = if (isSelected) SkyBlueDark else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+    val selectedTextColor = if (isDark) SkyBlueLight else SkyBlueDeep
+    val textColor = if (isSelected) selectedTextColor else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+    val selectedIconColor = if (isDark) SkyBlueMedium else SkyBlueDark
+    val iconColor = if (isSelected) selectedIconColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
     val iconToUse = if (isSelected) item.icon else item.iconOutlined
 
     Row(
@@ -620,7 +648,7 @@ fun PremiumSidebarItem(
                 .size(38.dp)
                 .clip(RoundedCornerShape(11.dp))
                 .background(
-                    if (isSelected) SkyBlueDark.copy(alpha = 0.12f)
+                    if (isSelected) SkyBlueDark.copy(alpha = if (isDark) 0.20f else 0.12f)
                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 ),
             contentAlignment = Alignment.Center
@@ -652,7 +680,7 @@ fun PremiumSidebarItem(
                     .clip(RoundedCornerShape(2.dp))
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(SidebarGradientStart, SidebarGradientEnd)
+                            colors = listOf(sidebarGradientStart, sidebarGradientEnd)
                         )
                     )
             )
@@ -662,11 +690,11 @@ fun PremiumSidebarItem(
             Spacer(modifier = Modifier.width(8.dp))
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = StatusError
+                color = MaterialTheme.colorScheme.error
             ) {
                 Text(
                     text = item.badge.toString(),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onError,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
@@ -677,13 +705,17 @@ fun PremiumSidebarItem(
 }
 
 // ════════════════════════════════════════════════════════════════
-//  PREMIUM BOTTOM NAVIGATION (Sky Blue, icons working)
+//  PREMIUM BOTTOM NAVIGATION (Sky Blue, theme-aware)
 // ════════════════════════════════════════════════════════════════
 @Composable
 fun BottomFooter(
     currentRoute: String,
     onNavigate: (String) -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
+    val bottomNavBg = MaterialTheme.colorScheme.surface
+    val bottomNavSelected = if (isDark) BottomNavSelectedDark else BottomNavSelectedLight
+
     val navItems = listOf(
         BottomNavItem(
             Icons.Filled.Dashboard,
@@ -713,7 +745,7 @@ fun BottomFooter(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = BottomNavBg,
+        color = bottomNavBg,
         shadowElevation = 24.dp,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
@@ -727,9 +759,9 @@ fun BottomFooter(
                         Brush.horizontalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                SkyBlueMedium.copy(alpha = 0.4f),
-                                SkyBlueAccent.copy(alpha = 0.5f),
-                                SkyBlueMedium.copy(alpha = 0.4f),
+                                SkyBlueMedium.copy(alpha = if (isDark) 0.3f else 0.4f),
+                                SkyBlueAccent.copy(alpha = if (isDark) 0.4f else 0.5f),
+                                SkyBlueMedium.copy(alpha = if (isDark) 0.3f else 0.4f),
                                 Color.Transparent
                             )
                         )
@@ -753,6 +785,7 @@ fun BottomFooter(
                         icon = icon,
                         label = label,
                         isSelected = isSelected,
+                        selectedColor = bottomNavSelected,
                         onClick = { onNavigate(item.route) },
                         modifier = Modifier.weight(1f)
                     )
@@ -767,6 +800,7 @@ fun BottomNavItemView(
     icon: ImageVector,
     label: String,
     isSelected: Boolean,
+    selectedColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -788,8 +822,8 @@ fun BottomNavItemView(
         label = "iconSize"
     )
 
-    val iconColor = if (isSelected) BottomNavSelected else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-    val labelColor = if (isSelected) BottomNavSelected else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+    val iconColor = if (isSelected) selectedColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+    val labelColor = if (isSelected) selectedColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -832,7 +866,7 @@ fun BottomNavItemView(
                         .background(
                             Brush.horizontalGradient(
                                 colors = listOf(
-                                    BottomNavSelected.copy(alpha = 0.12f * pillAlpha),
+                                    selectedColor.copy(alpha = 0.12f * pillAlpha),
                                     SkyBlueMedium.copy(alpha = 0.08f * pillAlpha)
                                 )
                             )
