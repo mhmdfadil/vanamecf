@@ -2,6 +2,7 @@ package com.example.cfvaname.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cfvaname.data.AutoRefreshManager
 import com.example.cfvaname.data.NilaiCf
 import com.example.cfvaname.data.NilaiCfRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +35,10 @@ class NilaiCfViewModel : ViewModel() {
 
     init {
         loadData()
+        // ✅ Auto-refresh global
+        viewModelScope.launch {
+            AutoRefreshManager.refreshTick.collect { loadData() }
+        }
     }
 
     fun loadData() {

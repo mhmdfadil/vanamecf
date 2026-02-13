@@ -2,6 +2,7 @@ package com.example.cfvaname.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cfvaname.data.AutoRefreshManager
 import com.example.cfvaname.data.Hipotesis
 import com.example.cfvaname.data.HipotesisRepository
 import com.example.cfvaname.data.HipotesisRequest
@@ -40,6 +41,10 @@ class HipotesisViewModel : ViewModel() {
 
     init {
         loadHipotesis()
+        // ✅ Auto-refresh global
+        viewModelScope.launch {
+            AutoRefreshManager.refreshTick.collect { loadHipotesis() }
+        }
     }
 
     fun loadHipotesis() {

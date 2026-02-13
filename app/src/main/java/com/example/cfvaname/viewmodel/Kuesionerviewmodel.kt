@@ -2,6 +2,7 @@ package com.example.cfvaname.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cfvaname.data.AutoRefreshManager
 import com.example.cfvaname.data.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,6 +59,10 @@ class KuesionerViewModel : ViewModel() {
 
     init {
         loadList()
+        // ✅ Auto-refresh global
+        viewModelScope.launch {
+            AutoRefreshManager.refreshTick.collect { loadList() }
+        }
     }
 
     fun loadList() {

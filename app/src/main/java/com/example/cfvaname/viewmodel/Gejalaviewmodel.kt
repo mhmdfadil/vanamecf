@@ -2,6 +2,7 @@ package com.example.cfvaname.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cfvaname.data.AutoRefreshManager
 import com.example.cfvaname.data.Gejala
 import com.example.cfvaname.data.GejalaHipotesis
 import com.example.cfvaname.data.GejalaHipotesisRepository
@@ -46,6 +47,14 @@ class GejalaViewModel : ViewModel() {
     val uiState: StateFlow<GejalaUiState> = _uiState.asStateFlow()
 
     init {
+        loadAll()
+        // ✅ Auto-refresh global
+        viewModelScope.launch {
+            AutoRefreshManager.refreshTick.collect { loadAll() }
+        }
+    }
+
+    private fun loadAll() {
         loadHipotesisList()
         loadGejalaHipotesis()
         loadGejala()
