@@ -54,7 +54,7 @@ object AutoRefreshManager {
      */
     val refreshTick: SharedFlow<Unit> = _refreshTick.asSharedFlow()
     
-    val intervalMs: Long = 60_000L
+    val intervalMs: Long = 270_000L
     
     /**
      * Map untuk menyimpan checksum terakhir dari setiap data
