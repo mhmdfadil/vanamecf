@@ -32,7 +32,7 @@ data class GejalaUiState(
     // Form fields
     val formKode: String = "",
     val formNama: String = "",
-    val formSelectedHipotesisIds: Set<Long> = emptySet(), // Many-to-many: multiple hipotesis
+    val formSelectedHipotesisIds: Set<Long> = emptySet(),
     val formError: String? = null,
     val isSaving: Boolean = false
 )
@@ -48,7 +48,7 @@ class GejalaViewModel : ViewModel() {
 
     init {
         loadAll()
-        // ✅ Auto-refresh global
+        // ✅ Auto-refresh global dengan deteksi perubahan
         viewModelScope.launch {
             AutoRefreshManager.refreshTick.collect { loadAll() }
         }
@@ -64,7 +64,11 @@ class GejalaViewModel : ViewModel() {
         viewModelScope.launch {
             hipotesisRepository.getAll().fold(
                 onSuccess = { list ->
-                    _uiState.value = _uiState.value.copy(hipotesisList = list)
+                    // ✅ Deteksi perubahan hipotesis
+                    val checksum = AutoRefreshManager.calculateChecksum(list)
+                    if (AutoRefreshManager.hasChanged("gejala_hipotesis_list", checksum)) {
+                        _uiState.value = _uiState.value.copy(hipotesisList = list)
+                    }
                 },
                 onFailure = { /* silent */ }
             )
@@ -75,7 +79,11 @@ class GejalaViewModel : ViewModel() {
         viewModelScope.launch {
             ghRepository.getAll().fold(
                 onSuccess = { list ->
-                    _uiState.value = _uiState.value.copy(gejalaHipotesisList = list)
+                    // ✅ Deteksi perubahan gejala_hipotesis pivot
+                    val checksum = AutoRefreshManager.calculateChecksum(list)
+                    if (AutoRefreshManager.hasChanged("gejala_gh_pivot", checksum)) {
+                        _uiState.value = _uiState.value.copy(gejalaHipotesisList = list)
+                    }
                 },
                 onFailure = { /* silent */ }
             )
@@ -89,7 +97,13 @@ class GejalaViewModel : ViewModel() {
             val result = if (query.isBlank()) repository.getAll() else repository.search(query)
             result.fold(
                 onSuccess = { list ->
-                    _uiState.value = _uiState.value.copy(gejalaList = list, isLoading = false)
+                    // ✅ Deteksi perubahan gejala
+                    val checksum = AutoRefreshManager.calculateChecksum(list)
+                    if (AutoRefreshManager.hasChanged("gejala_list_${query}", checksum)) {
+                        _uiState.value = _uiState.value.copy(gejalaList = list, isLoading = false)
+                    } else {
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                    }
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = error.message)
@@ -103,19 +117,12 @@ class GejalaViewModel : ViewModel() {
         loadGejala()
     }
 
-    /**
-     * Mendapatkan daftar hipotesis yang terkait dengan gejala tertentu
-     * melalui tabel pivot gejala_hipotesis
-     */
     fun getHipotesisForGejala(gejalaId: Long): List<Hipotesis> {
         val ghList = _uiState.value.gejalaHipotesisList.filter { it.gejalaId == gejalaId }
         val hipIds = ghList.map { it.hipotesisId }.toSet()
         return _uiState.value.hipotesisList.filter { it.id in hipIds }
     }
 
-    /**
-     * Mendapatkan nama hipotesis pertama yang terkait (untuk kompatibilitas tampilan card)
-     */
     fun getHipotesisNamaForGejala(gejalaId: Long): String {
         val hipList = getHipotesisForGejala(gejalaId)
         return if (hipList.isNotEmpty()) hipList.joinToString(", ") { it.nama } else "-"
@@ -148,14 +155,12 @@ class GejalaViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, formError = null)
 
-            // 1. Insert gejala (tanpa hipotesis_id)
             val request = GejalaRequest(
                 kode = state.formKode.trim().uppercase(),
                 nama = state.formNama.trim()
             )
             repository.insert(request).fold(
                 onSuccess = { newGejala ->
-                    // 2. Insert relasi gejala_hipotesis untuk setiap hipotesis yang dipilih
                     var hasError = false
                     for (hipId in state.formSelectedHipotesisIds) {
                         val ghRequest = GejalaHipotesisRequest(
@@ -176,6 +181,12 @@ class GejalaViewModel : ViewModel() {
                             isSaving = false, showAddDialog = false,
                             successMessage = "Gejala berhasil ditambahkan"
                         )
+                        // ✅ Invalidate cache dan trigger refresh
+                        AutoRefreshManager.invalidateAndRefresh(
+                            "gejala_list_",
+                            "gejala_gh_pivot",
+                            "dashboard_data"
+                        )
                         loadGejalaHipotesis()
                         loadGejala()
                     }
@@ -190,7 +201,6 @@ class GejalaViewModel : ViewModel() {
     // === EDIT ===
     fun showEditDialog(gejala: Gejala) {
         loadHipotesisList()
-        // Load current hipotesis associations for this gejala
         val currentHipIds = _uiState.value.gejalaHipotesisList
             .filter { it.gejalaId == gejala.id }
             .map { it.hipotesisId }
@@ -217,25 +227,21 @@ class GejalaViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, formError = null)
 
-            // 1. Update gejala data
             val request = GejalaRequest(
                 kode = state.formKode.trim().uppercase(),
                 nama = state.formNama.trim()
             )
             repository.update(gejala.id, request).fold(
                 onSuccess = {
-                    // 2. Sync gejala_hipotesis: hapus yang lama, insert yang baru
                     val currentGhList = state.gejalaHipotesisList.filter { it.gejalaId == gejala.id }
                     val currentHipIds = currentGhList.map { it.hipotesisId }.toSet()
                     val newHipIds = state.formSelectedHipotesisIds
 
-                    // Hapus relasi yang tidak ada di form
                     val toRemove = currentGhList.filter { it.hipotesisId !in newHipIds }
                     for (gh in toRemove) {
                         ghRepository.delete(gh.id)
                     }
 
-                    // Tambah relasi baru yang belum ada
                     val toAdd = newHipIds - currentHipIds
                     var hasError = false
                     for (hipId in toAdd) {
@@ -257,6 +263,12 @@ class GejalaViewModel : ViewModel() {
                         _uiState.value = _uiState.value.copy(
                             isSaving = false, showEditDialog = false, selectedGejala = null,
                             successMessage = "Gejala berhasil diupdate"
+                        )
+                        // ✅ Invalidate cache dan trigger refresh
+                        AutoRefreshManager.invalidateAndRefresh(
+                            "gejala_list_",
+                            "gejala_gh_pivot",
+                            "dashboard_data"
                         )
                         loadGejalaHipotesis()
                         loadGejala()
@@ -282,12 +294,17 @@ class GejalaViewModel : ViewModel() {
         val gejala = _uiState.value.selectedGejala ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true)
-            // CASCADE akan menghapus gejala_hipotesis terkait secara otomatis
             repository.delete(gejala.id).fold(
                 onSuccess = {
                     _uiState.value = _uiState.value.copy(
                         isSaving = false, showDeleteDialog = false, selectedGejala = null,
                         successMessage = "Gejala '${gejala.kode}' berhasil dihapus"
+                    )
+                    // ✅ Invalidate cache dan trigger refresh
+                    AutoRefreshManager.invalidateAndRefresh(
+                        "gejala_list_",
+                        "gejala_gh_pivot",
+                        "dashboard_data"
                     )
                     loadGejalaHipotesis()
                     loadGejala()
@@ -305,9 +322,6 @@ class GejalaViewModel : ViewModel() {
     fun onFormKodeChange(value: String) { _uiState.value = _uiState.value.copy(formKode = value, formError = null) }
     fun onFormNamaChange(value: String) { _uiState.value = _uiState.value.copy(formNama = value, formError = null) }
 
-    /**
-     * Toggle hipotesis selection (many-to-many)
-     */
     fun toggleHipotesisSelection(hipotesisId: Long) {
         val current = _uiState.value.formSelectedHipotesisIds.toMutableSet()
         if (hipotesisId in current) {

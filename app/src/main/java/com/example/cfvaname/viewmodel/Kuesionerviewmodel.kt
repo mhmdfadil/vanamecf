@@ -9,19 +9,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// Row for summary list
 data class KuesionerSummary(
     val kuesioner: Kuesioner,
     val gejalaCount: Int = 0
 )
 
 data class KuesionerUiState(
-    // List screen
     val summaryList: List<KuesionerSummary> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null,
-    // Create form
     val showCreateForm: Boolean = false,
     val formNama: String = "",
     val formNoHp: String = "",
@@ -29,15 +26,11 @@ data class KuesionerUiState(
     val formUsiaUdang: String = "",
     val formError: String? = null,
     val isSaving: Boolean = false,
-    // Data for form (many-to-many aware)
     val gejalaList: List<Gejala> = emptyList(),
     val hipotesisList: List<Hipotesis> = emptyList(),
     val gejalaHipotesisList: List<GejalaHipotesis> = emptyList(),
     val nilaiCfList: List<NilaiCf> = emptyList(),
-    // ✅ PERBAIKAN: Key adalah gejalaId, bukan gejalaHipotesisId
-    // Map: gejalaId -> nilaiCfId (unique per gejala di seluruh hipotesis)
     val selectedGejalaCf: Map<Long, Long> = emptyMap(),
-    // Hasil screen
     val showHasil: Boolean = false,
     val hasilKuesioner: Kuesioner? = null,
     val hasilResults: List<HipotesisResult> = emptyList(),
@@ -46,7 +39,6 @@ data class KuesionerUiState(
     val allNilaiCfMap: Map<Long, NilaiCf> = emptyMap(),
     val allGejalaMap: Map<Long, Gejala> = emptyMap(),
     val allGejalaHipotesisMap: Map<Long, GejalaHipotesis> = emptyMap(),
-    // Delete
     val showDeleteDialog: Boolean = false,
     val selectedKuesioner: Kuesioner? = null
 )
@@ -60,7 +52,7 @@ class KuesionerViewModel : ViewModel() {
 
     init {
         loadList()
-        // ✅ Auto-refresh global
+        // ✅ Auto-refresh global dengan deteksi perubahan
         viewModelScope.launch {
             AutoRefreshManager.refreshTick.collect { loadList() }
         }
@@ -74,7 +66,14 @@ class KuesionerViewModel : ViewModel() {
                     val summaries = list.map { k ->
                         KuesionerSummary(kuesioner = k, gejalaCount = repo.countKuesionerData(k.id))
                     }
-                    _uiState.value = _uiState.value.copy(summaryList = summaries, isLoading = false)
+                    
+                    // ✅ Deteksi perubahan kuesioner list
+                    val checksum = AutoRefreshManager.calculateChecksum(summaries.map { it.kuesioner })
+                    if (AutoRefreshManager.hasChanged("kuesioner_list", checksum)) {
+                        _uiState.value = _uiState.value.copy(summaryList = summaries, isLoading = false)
+                    } else {
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                    }
                 },
                 onFailure = { _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = it.message) }
             )
@@ -90,7 +89,6 @@ class KuesionerViewModel : ViewModel() {
                 formNama = "", formNoHp = "", formLokasi = "", formUsiaUdang = "",
                 selectedGejalaCf = emptyMap(), formError = null
             )
-            // Load gejala, hipotesis, gejala_hipotesis, nilaiCf
             repo.getAllGejalas().onSuccess { _uiState.value = _uiState.value.copy(gejalaList = it) }
             repo.getAllHipotesis().onSuccess { _uiState.value = _uiState.value.copy(hipotesisList = it) }
             repo.getAllGejalaHipotesis().onSuccess { _uiState.value = _uiState.value.copy(gejalaHipotesisList = it) }
@@ -107,10 +105,6 @@ class KuesionerViewModel : ViewModel() {
     fun onFormLokasiChange(v: String) { _uiState.value = _uiState.value.copy(formLokasi = v, formError = null) }
     fun onFormUsiaUdangChange(v: String) { _uiState.value = _uiState.value.copy(formUsiaUdang = v, formError = null) }
 
-    /**
-     * ✅ PERBAIKAN: Toggle gejala berdasarkan gejalaId
-     * Jika user pilih gejala di hipotesis A, otomatis apply ke semua hipotesis yang punya gejala itu
-     */
     fun toggleGejala(gejalaId: Long, nilaiCfId: Long) {
         val map = _uiState.value.selectedGejalaCf.toMutableMap()
         if (nilaiCfId == 0L) {
@@ -148,11 +142,8 @@ class KuesionerViewModel : ViewModel() {
 
             repo.insertKuesioner(kuesionerReq).fold(
                 onSuccess = { kuesioner ->
-                    // ✅ PERBAIKAN: Insert kuesioner_data dengan representasi minimal
-                    // Untuk setiap gejalaId yang dipilih, insert 1 entry dengan gejalaHipotesisId pertama
                     val ghMap = s.gejalaHipotesisList.groupBy { it.gejalaId }
                     val dataList = s.selectedGejalaCf.mapNotNull { (gejalaId, cfId) ->
-                        // Ambil gejalaHipotesis pertama untuk gejala ini
                         val firstGh = ghMap[gejalaId]?.firstOrNull()
                         if (firstGh != null) {
                             KuesionerDataInsertRequest(
@@ -170,6 +161,11 @@ class KuesionerViewModel : ViewModel() {
                             _uiState.value = _uiState.value.copy(
                                 isSaving = false, showCreateForm = false,
                                 successMessage = "Kuesioner berhasil disimpan"
+                            )
+                            // ✅ Invalidate cache dan trigger refresh
+                            AutoRefreshManager.invalidateAndRefresh(
+                                "kuesioner_list",
+                                "dashboard_data"
                             )
                             loadList()
                             showHasil(kuesioner)
@@ -191,7 +187,6 @@ class KuesionerViewModel : ViewModel() {
                 hasilKuesioner = kuesioner, isLoading = true
             )
 
-            // Load all needed data
             val kuesionerDataResult = repo.getKuesionerData(kuesioner.id)
             val gejalaResult = repo.getAllGejalas()
             val hipotesisResult = repo.getAllHipotesis()
@@ -210,10 +205,8 @@ class KuesionerViewModel : ViewModel() {
             val gejalaMap = gejalaList.associateBy { it.id }
             val ghMap = ghList.associateBy { it.id }
             
-            // ✅ PERBAIKAN: Map gejalaId -> list of gejalaHipotesis (untuk akses cepat)
             val ghByGejalaId = ghList.groupBy { it.gejalaId }
             
-            // ✅ PERBAIKAN: Map gejalaId -> nilaiCfId dari kuesioner (dari gejalaHipotesisId)
             val gejalaIdToCfId = mutableMapOf<Long, Long>()
             for (data in kuesionerDataList) {
                 val gh = ghMap[data.gejalaHipotesisId]
@@ -222,40 +215,33 @@ class KuesionerViewModel : ViewModel() {
                 }
             }
 
-            // CF Calculation per hipotesis
             val results = mutableListOf<HipotesisResult>()
 
             for (hipotesis in hipotesisList) {
-                // ✅ PERBAIKAN: Semua gejala_hipotesis untuk hipotesis ini
                 val ghForHipotesis = ghList.filter { it.hipotesisId == hipotesis.id }
 
                 var cfCombine = 0.0
                 var prevCF = 0.0
                 var count = 0
                 val steps = mutableListOf<CfCalculationStep>()
-                val processedGejalaIds = mutableSetOf<Long>() // Hindari double-count
+                val processedGejalaIds = mutableSetOf<Long>()
 
                 for (gh in ghForHipotesis) {
                     val gejalaId = gh.gejalaId
                     val gejala = gejalaMap[gejalaId] ?: continue
 
-                    // ✅ Skip jika gejala ini sudah diproses untuk hipotesis ini
                     if (processedGejalaIds.contains(gejalaId)) continue
 
-                    // Apakah user memilih gejala ini?
                     val cfUser = gejalaIdToCfId[gejalaId]
-                    if (cfUser == null || cfUser == 0L) continue // User tidak pilih gejala ini
+                    if (cfUser == null || cfUser == 0L) continue
 
                     processedGejalaIds.add(gejalaId)
 
-                    // CF Pakar: dari rules dengan gejalaHipotesisId = gh.id
                     val rule = rulesList.find { it.gejalaHipotesisId == gh.id }
                     val cfPakar = if (rule != null) nilaiCfMap[rule.cfId]?.nilai ?: 0.0 else 0.0
 
-                    // CF User: dari map
                     val cfUserValue = nilaiCfMap[cfUser]?.nilai ?: 0.0
 
-                    // CF Gejala = CF Pakar x CF User
                     val cfGejala = cfPakar * cfUserValue
 
                     val cfSebelum = prevCF
@@ -292,7 +278,6 @@ class KuesionerViewModel : ViewModel() {
                 }
             }
 
-            // Sort descending by cfCombine
             results.sortByDescending { it.cfCombine }
 
             _uiState.value = _uiState.value.copy(
@@ -329,6 +314,11 @@ class KuesionerViewModel : ViewModel() {
                     _uiState.value = _uiState.value.copy(
                         isSaving = false, showDeleteDialog = false, selectedKuesioner = null,
                         successMessage = "Kuesioner berhasil dihapus"
+                    )
+                    // ✅ Invalidate cache dan trigger refresh
+                    AutoRefreshManager.invalidateAndRefresh(
+                        "kuesioner_list",
+                        "dashboard_data"
                     )
                     loadList()
                 },

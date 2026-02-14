@@ -41,7 +41,7 @@ class HipotesisViewModel : ViewModel() {
 
     init {
         loadHipotesis()
-        // ✅ Auto-refresh global
+        // ✅ Auto-refresh global dengan deteksi perubahan
         viewModelScope.launch {
             AutoRefreshManager.refreshTick.collect { loadHipotesis() }
         }
@@ -58,7 +58,13 @@ class HipotesisViewModel : ViewModel() {
             }
             result.fold(
                 onSuccess = { list ->
-                    _uiState.value = _uiState.value.copy(hipotesisList = list, isLoading = false)
+                    // ✅ Deteksi perubahan hipotesis
+                    val checksum = AutoRefreshManager.calculateChecksum(list)
+                    if (AutoRefreshManager.hasChanged("hipotesis_list_${query}", checksum)) {
+                        _uiState.value = _uiState.value.copy(hipotesisList = list, isLoading = false)
+                    } else {
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                    }
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = error.message)
@@ -117,6 +123,12 @@ class HipotesisViewModel : ViewModel() {
                         isSaving = false, showAddDialog = false,
                         successMessage = "Hipotesis berhasil ditambahkan"
                     )
+                    // ✅ Invalidate cache dan trigger refresh
+                    AutoRefreshManager.invalidateAndRefresh(
+                        "hipotesis_list_",
+                        "gejala_hipotesis_list",
+                        "dashboard_data"
+                    )
                     loadHipotesis()
                 },
                 onFailure = { error ->
@@ -167,6 +179,12 @@ class HipotesisViewModel : ViewModel() {
                         isSaving = false, showEditDialog = false, selectedHipotesis = null,
                         successMessage = "Hipotesis berhasil diupdate"
                     )
+                    // ✅ Invalidate cache dan trigger refresh
+                    AutoRefreshManager.invalidateAndRefresh(
+                        "hipotesis_list_",
+                        "gejala_hipotesis_list",
+                        "dashboard_data"
+                    )
                     loadHipotesis()
                 },
                 onFailure = { error ->
@@ -194,6 +212,12 @@ class HipotesisViewModel : ViewModel() {
                     _uiState.value = _uiState.value.copy(
                         isSaving = false, showDeleteDialog = false, selectedHipotesis = null,
                         successMessage = "Hipotesis '${hipotesis.kode}' berhasil dihapus"
+                    )
+                    // ✅ Invalidate cache dan trigger refresh
+                    AutoRefreshManager.invalidateAndRefresh(
+                        "hipotesis_list_",
+                        "gejala_hipotesis_list",
+                        "dashboard_data"
                     )
                     loadHipotesis()
                 },

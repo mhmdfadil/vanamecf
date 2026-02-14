@@ -46,9 +46,11 @@ class DashboardViewModel : ViewModel() {
 
     init {
         loadDashboardData()
-        // ✅ Auto-refresh global
+        // ✅ Auto-refresh global dengan deteksi perubahan
         viewModelScope.launch {
-            AutoRefreshManager.refreshTick.collect { loadDashboardData() }
+            AutoRefreshManager.refreshTick.collect { 
+                loadDashboardData() 
+            }
         }
     }
 
@@ -70,36 +72,52 @@ class DashboardViewModel : ViewModel() {
                 val nilaiCfs = nilaiCfResult.getOrDefault(emptyList())
                 val ghList = ghResult.getOrDefault(emptyList())
 
-                // Stats
-                val stats = DashboardStats(
-                    totalGejala = gejalas.size,
-                    totalHipotesis = hipotesisList.size,
-                    totalKuesioner = kuesioners.size,
-                    totalNilaiCf = nilaiCfs.size
+                // ✅ Kalkulasi checksum untuk deteksi perubahan
+                val combinedData = listOf(
+                    gejalas.hashCode(),
+                    hipotesisList.hashCode(),
+                    kuesioners.hashCode(),
+                    nilaiCfs.hashCode(),
+                    ghList.hashCode()
                 )
+                val checksum = AutoRefreshManager.calculateChecksum(combinedData)
 
-                // Top hipotesis by gejala count (via gejala_hipotesis pivot)
-                val topHipotesis = hipotesisList.map { h ->
-                    val count = ghList.count { it.hipotesisId == h.id }
-                    HipotesisWithGejalaCount(hipotesis = h, gejalaCount = count)
+                // ✅ Hanya update UI jika ada perubahan
+                if (AutoRefreshManager.hasChanged("dashboard_data", checksum)) {
+                    // Stats
+                    val stats = DashboardStats(
+                        totalGejala = gejalas.size,
+                        totalHipotesis = hipotesisList.size,
+                        totalKuesioner = kuesioners.size,
+                        totalNilaiCf = nilaiCfs.size
+                    )
+
+                    // Top hipotesis by gejala count (via gejala_hipotesis pivot)
+                    val topHipotesis = hipotesisList.map { h ->
+                        val count = ghList.count { it.hipotesisId == h.id }
+                        HipotesisWithGejalaCount(hipotesis = h, gejalaCount = count)
+                    }
+                        .sortedByDescending { it.gejalaCount }
+                        .take(5)
+
+                    // Recent kuesioner (already sorted desc by created_at from repo)
+                    val recentKuesioner = kuesioners.take(5).map { k ->
+                        val count = try {
+                            kuesionerRepository.countKuesionerData(k.id)
+                        } catch (_: Exception) { 0 }
+                        KuesionerWithDetail(kuesioner = k, gejalaCount = count)
+                    }
+
+                    _uiState.value = DashboardUiState(
+                        isLoading = false,
+                        stats = stats,
+                        topHipotesis = topHipotesis,
+                        recentKuesioner = recentKuesioner
+                    )
+                } else {
+                    // Data tidak berubah, hanya update loading state
+                    _uiState.value = _uiState.value.copy(isLoading = false)
                 }
-                    .sortedByDescending { it.gejalaCount }
-                    .take(5)
-
-                // Recent kuesioner (already sorted desc by created_at from repo)
-                val recentKuesioner = kuesioners.take(5).map { k ->
-                    val count = try {
-                        kuesionerRepository.countKuesionerData(k.id)
-                    } catch (_: Exception) { 0 }
-                    KuesionerWithDetail(kuesioner = k, gejalaCount = count)
-                }
-
-                _uiState.value = DashboardUiState(
-                    isLoading = false,
-                    stats = stats,
-                    topHipotesis = topHipotesis,
-                    recentKuesioner = recentKuesioner
-                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

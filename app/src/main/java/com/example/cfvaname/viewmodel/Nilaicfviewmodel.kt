@@ -15,12 +15,10 @@ data class NilaiCfUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null,
-    // Dialog states
     val showAddDialog: Boolean = false,
     val showEditDialog: Boolean = false,
     val showDeleteDialog: Boolean = false,
     val selectedNilaiCf: NilaiCf? = null,
-    // Form
     val formKeterangan: String = "",
     val formError: String? = null,
     val isSaving: Boolean = false
@@ -35,7 +33,7 @@ class NilaiCfViewModel : ViewModel() {
 
     init {
         loadData()
-        // ✅ Auto-refresh global
+        // ✅ Auto-refresh global dengan deteksi perubahan
         viewModelScope.launch {
             AutoRefreshManager.refreshTick.collect { loadData() }
         }
@@ -46,7 +44,13 @@ class NilaiCfViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             repository.getAll().fold(
                 onSuccess = { list ->
-                    _uiState.value = _uiState.value.copy(nilaiCfList = list, isLoading = false)
+                    // ✅ Deteksi perubahan nilai CF
+                    val checksum = AutoRefreshManager.calculateChecksum(list)
+                    if (AutoRefreshManager.hasChanged("nilaicf_list", checksum)) {
+                        _uiState.value = _uiState.value.copy(nilaiCfList = list, isLoading = false)
+                    } else {
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                    }
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = error.message)
@@ -55,10 +59,6 @@ class NilaiCfViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Preview: menghitung bagaimana nilai akan terdistribusi
-     * jika ada N+1 item (setelah tambah 1)
-     */
     fun previewDistribution(currentCount: Int): List<Double> {
         val newCount = currentCount + 1
         if (newCount <= 1) return listOf(1.0)
@@ -89,6 +89,11 @@ class NilaiCfViewModel : ViewModel() {
                     _uiState.value = _uiState.value.copy(
                         isSaving = false, showAddDialog = false,
                         successMessage = "Nilai CF berhasil ditambahkan (nilai diperbarui otomatis)"
+                    )
+                    // ✅ Invalidate cache dan trigger refresh
+                    AutoRefreshManager.invalidateAndRefresh(
+                        "nilaicf_list",
+                        "dashboard_data"
                     )
                     loadData()
                 },
@@ -126,6 +131,8 @@ class NilaiCfViewModel : ViewModel() {
                         isSaving = false, showEditDialog = false, selectedNilaiCf = null,
                         successMessage = "Keterangan berhasil diupdate"
                     )
+                    // ✅ Invalidate cache dan trigger refresh
+                    AutoRefreshManager.invalidateAndRefresh("nilaicf_list")
                     loadData()
                 },
                 onFailure = { error ->
@@ -153,6 +160,11 @@ class NilaiCfViewModel : ViewModel() {
                     _uiState.value = _uiState.value.copy(
                         isSaving = false, showDeleteDialog = false, selectedNilaiCf = null,
                         successMessage = "Nilai CF '${item.keterangan}' berhasil dihapus (nilai diperbarui otomatis)"
+                    )
+                    // ✅ Invalidate cache dan trigger refresh
+                    AutoRefreshManager.invalidateAndRefresh(
+                        "nilaicf_list",
+                        "dashboard_data"
                     )
                     loadData()
                 },

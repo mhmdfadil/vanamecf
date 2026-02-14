@@ -9,18 +9,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * State untuk setiap gejala dalam satu hipotesis (via gejala_hipotesis pivot)
- * PERUBAHAN: Menyimpan gejalaHipotesisId (pivot ID) sebagai referensi rule
- */
 data class GejalaRuleState(
     val gejala: Gejala,
-    val gejalaHipotesisId: Long, // ID dari tabel gejala_hipotesis
+    val gejalaHipotesisId: Long,
     val currentRule: Rule?,
-    val selectedCfId: Long // CF yang dipilih user
+    val selectedCfId: Long
 )
 
-// Group hipotesis dengan gejala-gejalanya
 data class HipotesisGroup(
     val hipotesis: Hipotesis,
     val gejalaRules: List<GejalaRuleState>
@@ -48,7 +43,7 @@ class RuleViewModel : ViewModel() {
 
     init {
         loadAll()
-        // ✅ Auto-refresh global
+        // ✅ Auto-refresh global dengan deteksi perubahan
         viewModelScope.launch {
             AutoRefreshManager.refreshTick.collect { loadAll() }
         }
@@ -77,13 +72,11 @@ class RuleViewModel : ViewModel() {
                 val gejalaMap = gejalaList.associateBy { it.id }
 
                 val groups = hipotesisList.mapNotNull { hipotesis ->
-                    // Cari semua gejala_hipotesis untuk hipotesis ini
                     val ghForHipotesis = ghList.filter { it.hipotesisId == hipotesis.id }
                     if (ghForHipotesis.isEmpty()) return@mapNotNull null
 
                     val gejalaRules = ghForHipotesis.mapNotNull { gh ->
                         val gejala = gejalaMap[gh.gejalaId] ?: return@mapNotNull null
-                        // Rule sekarang merujuk ke gejala_hipotesis_id
                         val existingRule = ruleList.find { it.gejalaHipotesisId == gh.id }
                         GejalaRuleState(
                             gejala = gejala,
@@ -101,11 +94,25 @@ class RuleViewModel : ViewModel() {
                     )
                 }
 
-                _uiState.value = _uiState.value.copy(
-                    hipotesisGroups = groups,
-                    nilaiCfList = nilaiCfList,
-                    isLoading = false
+                // ✅ Deteksi perubahan rules
+                val combinedData = listOf(
+                    hipotesisList.hashCode(),
+                    gejalaList.hashCode(),
+                    ruleList.hashCode(),
+                    ghList.hashCode(),
+                    nilaiCfList.hashCode()
                 )
+                val checksum = AutoRefreshManager.calculateChecksum(combinedData)
+
+                if (AutoRefreshManager.hasChanged("rules_data", checksum)) {
+                    _uiState.value = _uiState.value.copy(
+                        hipotesisGroups = groups,
+                        nilaiCfList = nilaiCfList,
+                        isLoading = false
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
             } else {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -139,9 +146,8 @@ class RuleViewModel : ViewModel() {
             val allGejalaRules = _uiState.value.hipotesisGroups.flatMap { it.gejalaRules }
 
             for (gejalaRule in allGejalaRules) {
-                if (gejalaRule.selectedCfId == 0L) continue // Skip if not set
+                if (gejalaRule.selectedCfId == 0L) continue
 
-                // PERUBAHAN: Rule sekarang merujuk ke gejala_hipotesis_id
                 val request = RuleRequest(
                     gejalaHipotesisId = gejalaRule.gejalaHipotesisId,
                     cfId = gejalaRule.selectedCfId
@@ -167,7 +173,9 @@ class RuleViewModel : ViewModel() {
                     isSaving = false,
                     successMessage = "Rules berhasil disimpan"
                 )
-                loadAll() // Reload to get updated data
+                // ✅ Invalidate cache dan trigger refresh
+                AutoRefreshManager.invalidateAndRefresh("rules_data")
+                loadAll()
             } else {
                 _uiState.value = _uiState.value.copy(isSaving = false)
             }
