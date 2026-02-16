@@ -298,7 +298,7 @@ fun LoginScreen(
                                 color = VenamePrimaryDark
                             )
                             Text(
-                                text = "Admin: admin@vaname.com / admin123\nUser: user@vaname.com / user123",
+                                text = "Admin: admin@vaname.com / admin123\n",
                                 fontSize = 11.sp,
                                 color = VenamePrimaryDark.copy(alpha = 0.8f),
                                 lineHeight = 16.sp
